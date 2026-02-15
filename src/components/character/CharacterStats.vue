@@ -2,90 +2,69 @@
   <div class="char-stats">
     <section class="stat-section">
       <h4>Attributes</h4>
-      <div class="stat-row">
-        <span class="stat-name str">Strength</span>
-        <span class="stat-value">{{ character.baseStats.strength }}</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-name dex">Dexterity</span>
-        <span class="stat-value">{{ character.baseStats.dexterity }}</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-name int">Intelligence</span>
-        <span class="stat-value">{{ character.baseStats.intelligence }}</span>
-      </div>
+      <StatRow label="Strength"     :value="String(character.baseStats.strength)"     color="str"       tip="Each point gives +5 Maximum Life and +1 Armour per 5 points." @tip="onTip" />
+      <StatRow label="Dexterity"    :value="String(character.baseStats.dexterity)"    color="dex"       tip="Each point gives +0.002 Attack Speed and +0.2% Movement Speed." @tip="onTip" />
+      <StatRow label="Intelligence" :value="String(character.baseStats.intelligence)" color="int"       tip="Each point gives +3 Maximum Mana." @tip="onTip" />
     </section>
 
-    <section class="stat-section" v-if="stats">
-      <h4>Offense</h4>
-      <div class="stat-row">
-        <span class="stat-name">Attack Damage</span>
-        <span class="stat-value">{{ stats.attackDamage }}</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-name">Attack Speed</span>
-        <span class="stat-value">{{ stats.attackSpeed.toFixed(2) }}/s</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-name">Movement Speed</span>
-        <span class="stat-value">{{ stats.movementSpeed }}%</span>
-      </div>
-    </section>
+    <template v-if="stats">
+      <section class="stat-section">
+        <h4>Offense</h4>
+        <StatRow label="Attack Damage" :value="String(stats.attackDamage)"               tip="Average physical damage per hit. Scaled by weapon base damage, Strength modifiers, and % increased modifiers." @tip="onTip" />
+        <StatRow label="Attack Speed"  :value="stats.attackSpeed.toFixed(2) + '/s'"      tip="Attacks per second. Base 1.0 + 0.002 per Dexterity, further scaled by % increased Attack Speed modifiers." @tip="onTip" />
+        <StatRow label="Move Speed"    :value="stats.movementSpeed + '%'"                 tip="Movement speed relative to base (100%). Each Dexterity point adds 0.2%. Increased by movement speed modifiers." @tip="onTip" />
+      </section>
 
-    <section class="stat-section" v-if="stats">
-      <h4>Defense</h4>
-      <div class="stat-row">
-        <span class="stat-name">Armour</span>
-        <span class="stat-value">{{ stats.defense }}</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-name">Life</span>
-        <span class="stat-value">{{ stats.health }}</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-name">Mana</span>
-        <span class="stat-value">{{ stats.mana }}</span>
-      </div>
-    </section>
+      <section class="stat-section">
+        <h4>Defense</h4>
+        <StatRow label="Armour"  :value="String(stats.defense)"  tip="Reduces incoming physical damage. Sum of equipment base defense plus 1 per 5 Strength, then scaled by % increased Armour modifiers." @tip="onTip" />
+        <StatRow label="Life"    :value="String(stats.health)"   tip="Maximum life. Base 50 + 5 per Strength point. Increased by flat Maximum Life modifiers." @tip="onTip" />
+        <StatRow label="Mana"    :value="String(stats.mana)"     tip="Maximum mana. Base 30 + 3 per Intelligence point. Increased by flat Maximum Mana modifiers." @tip="onTip" />
+      </section>
 
-    <section class="stat-section" v-if="stats">
-      <h4>Resistances</h4>
-      <div class="stat-row">
-        <span class="stat-name fire">Fire</span>
-        <span class="stat-value" :class="resClass(stats.fireResistance)">
-          {{ stats.fireResistance }}%
-        </span>
+      <section class="stat-section">
+        <h4>Resistances</h4>
+        <StatRow label="Fire"      :value="stats.fireResistance + '%'"        color="fire"      :valueClass="resClass(stats.fireResistance)"      tip="Reduces fire damage taken. Capped at 75%. Stack fire resistance modifiers on gear to reach the cap." @tip="onTip" />
+        <StatRow label="Cold"      :value="stats.iceResistance + '%'"         color="ice"       :valueClass="resClass(stats.iceResistance)"       tip="Reduces cold damage taken. Capped at 75%." @tip="onTip" />
+        <StatRow label="Lightning" :value="stats.lightningResistance + '%'"   color="lightning" :valueClass="resClass(stats.lightningResistance)"  tip="Reduces lightning damage taken. Capped at 75%." @tip="onTip" />
+        <StatRow label="Chaos"     :value="stats.chaosResistance + '%'"       color="chaos"     :valueClass="resClass(stats.chaosResistance)"     tip="Reduces chaos damage taken. No cap — can be negative. Rare modifiers can raise this." @tip="onTip" />
+      </section>
+    </template>
+
+    <!-- Floating tooltip -->
+    <Teleport to="body">
+      <div
+        v-if="activeTip"
+        class="stat-tooltip"
+        :style="{ top: tipY + 'px', left: tipX + 'px' }"
+      >
+        {{ activeTip }}
       </div>
-      <div class="stat-row">
-        <span class="stat-name ice">Cold</span>
-        <span class="stat-value" :class="resClass(stats.iceResistance)">
-          {{ stats.iceResistance }}%
-        </span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-name lightning">Lightning</span>
-        <span class="stat-value" :class="resClass(stats.lightningResistance)">
-          {{ stats.lightningResistance }}%
-        </span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-name chaos">Chaos</span>
-        <span class="stat-value" :class="resClass(stats.chaosResistance)">
-          {{ stats.chaosResistance }}%
-        </span>
-      </div>
-    </section>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { Character } from '@/types'
 import { useCharactersStore } from '@/stores'
+import StatRow from './StatRow.vue'
 
 const props = defineProps<{ character: Character }>()
 const charactersStore = useCharactersStore()
 const stats = computed(() => charactersStore.getComputedStats(props.character.id))
+
+const activeTip = ref<string | null>(null)
+const tipX = ref(0)
+const tipY = ref(0)
+
+function onTip(tip: string | null, event: MouseEvent | null) {
+  activeTip.value = tip
+  if (event) {
+    tipX.value = event.clientX + 14
+    tipY.value = event.clientY + 14
+  }
+}
 
 function resClass(val: number): string {
   if (val >= 75) return 'res-capped'
@@ -118,25 +97,17 @@ function resClass(val: number): string {
   border-bottom: 1px solid var(--color-border);
 }
 
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 2px 0;
+.stat-tooltip {
+  position: fixed;
+  z-index: 300;
+  pointer-events: none;
+  background: #1a1410;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  max-width: 240px;
+  line-height: 1.5;
 }
-
-.stat-name { font-size: 12px; color: var(--color-text-secondary); }
-.stat-value { font-size: 12px; color: var(--color-text-primary); font-weight: 600; }
-
-.str        { color: #c86050; }
-.dex        { color: #60c870; }
-.int        { color: #6090e0; }
-.fire       { color: var(--color-fire); }
-.ice        { color: var(--color-ice); }
-.lightning  { color: var(--color-lightning); }
-.chaos      { color: var(--color-chaos); }
-
-.res-capped   { color: var(--color-rarity-rare); }
-.res-good     { color: var(--color-text-primary); }
-.res-negative { color: var(--color-danger); }
 </style>
