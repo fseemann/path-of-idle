@@ -23,6 +23,14 @@
         </p>
       </div>
 
+      <label class="auto-rerun-toggle">
+        <input type="checkbox" v-model="autoRerun" />
+        <span class="toggle-label">
+          Auto rerun
+          <span class="toggle-hint">Loot is collected automatically and the map restarts immediately on completion.</span>
+        </span>
+      </label>
+
       <div class="modal-actions">
         <button @click="emit('close')">Cancel</button>
         <button class="primary" :disabled="!selectedId" @click="onSend">
@@ -44,9 +52,8 @@ const emit = defineEmits<{ close: [] }>()
 const charactersStore = useCharactersStore()
 const mapRunsStore = useMapRunsStore()
 
-const selectedId = ref<string | null>(
-  charactersStore.selectedCharacterId
-)
+const selectedId = ref<string | null>(charactersStore.selectedCharacterId)
+const autoRerun = ref(false)
 
 const eligibleCharacters = computed(() =>
   charactersStore.characters.filter((c) => c.level >= props.map.levelRequirement)
@@ -58,7 +65,7 @@ function isBusy(characterId: string): boolean {
 
 function onSend() {
   if (!selectedId.value) return
-  mapRunsStore.startRun(props.map.id, selectedId.value)
+  mapRunsStore.startRun(props.map.id, selectedId.value, autoRerun.value)
   emit('close')
 }
 </script>
@@ -74,7 +81,7 @@ function onSend() {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
 }
 
 .char-option {
@@ -126,6 +133,43 @@ function onSend() {
   font-size: 13px;
   text-align: center;
   padding: var(--spacing-md);
+}
+
+.auto-rerun-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.auto-rerun-toggle:hover {
+  border-color: var(--color-border-light);
+}
+
+.auto-rerun-toggle input[type='checkbox'] {
+  margin-top: 2px;
+  accent-color: var(--color-text-primary);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.toggle-hint {
+  font-size: 11px;
+  color: var(--color-text-dim);
 }
 
 .modal-actions {

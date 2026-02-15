@@ -19,6 +19,7 @@ export interface MapRun {
   durationMs: number
   completedAt: number | null
   lootCollected: boolean
+  autoRerun: boolean
 }
 
 export interface RunProgress {

@@ -59,7 +59,7 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
   }
 
   // Actions
-  function startRun(mapId: string, characterId: string): string {
+  function startRun(mapId: string, characterId: string, autoRerun = false): string {
     const map = GAME_MAPS.find((m) => m.id === mapId)
     if (!map) throw new Error(`Unknown map: ${mapId}`)
 
@@ -79,8 +79,18 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
       durationMs: map.durationSeconds * 1000,
       completedAt: null,
       lootCollected: false,
+      autoRerun,
     })
     return runId
+  }
+
+  function stopRun(characterId: string) {
+    const run = getActiveRunForCharacter(characterId)
+    if (run) {
+      run.autoRerun = false
+      run.completedAt = Date.now()
+      run.lootCollected = true
+    }
   }
 
   function completeRun(run: MapRun, now: number) {
@@ -97,7 +107,13 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
     }
 
     run.completedAt = now
-    // lootCollected stays false — UI will show notification
+
+    if (run.autoRerun) {
+      // Auto-collect loot silently and immediately start the next run
+      run.lootCollected = true
+      startRun(run.mapId, run.characterId, true)
+    }
+    // Otherwise lootCollected stays false — UI shows notification
   }
 
   function tick() {
@@ -148,6 +164,7 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
     getActiveRunForCharacter,
     getProgress,
     startRun,
+    stopRun,
     acknowledgeLoot,
     tick,
     startLoop,
