@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import type { EquipmentItem, EquipmentSlot } from '@/types'
+import type { EquipmentItem, ItemSlot } from '@/types'
 
 const STORAGE_KEY = 'poi-inventory'
 
@@ -27,7 +27,7 @@ export const useInventoryStore = defineStore('inventory', () => {
   )
 
   const itemsBySlot = computed(() => {
-    const result: Partial<Record<EquipmentSlot, EquipmentItem[]>> = {}
+    const result: Partial<Record<ItemSlot, EquipmentItem[]>> = {}
     for (const item of items.value) {
       const slot = item.slot
       if (!result[slot]) result[slot] = []

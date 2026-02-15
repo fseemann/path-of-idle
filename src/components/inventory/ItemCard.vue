@@ -33,19 +33,20 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import type { EquipmentItem, EquipmentSlot } from '@/types'
+import type { EquipmentItem } from '@/types'
 import ItemTooltip from './ItemTooltip.vue'
 
 defineProps<{ item: EquipmentItem }>()
 const emit = defineEmits<{ equip: [item: EquipmentItem] }>()
 
-const SLOT_LABELS: Record<EquipmentSlot, string> = {
+const SLOT_LABELS: Record<string, string> = {
   helmet: 'Helmet',
   bodyArmor: 'Body Armour',
   weapon: 'Weapon',
   boots: 'Boots',
   leftRing: 'Left Ring',
   rightRing: 'Right Ring',
+  ring: 'Ring',
 }
 
 const showTip = ref(false)

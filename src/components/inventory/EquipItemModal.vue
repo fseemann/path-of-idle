@@ -20,6 +20,30 @@
         >{{ mod.label }}</div>
       </div>
 
+      <!-- Ring slot picker — only shown for rings -->
+      <div v-if="isRing" class="ring-slot-picker">
+        <button
+          class="ring-slot-btn"
+          :class="{ active: ringSlot === 'leftRing' }"
+          @click="ringSlot = 'leftRing'"
+        >
+          Left Ring
+          <span v-if="selectedChar?.equipment.leftRing" class="displaced-hint">
+            ↪ {{ selectedChar.equipment.leftRing.name }}
+          </span>
+        </button>
+        <button
+          class="ring-slot-btn"
+          :class="{ active: ringSlot === 'rightRing' }"
+          @click="ringSlot = 'rightRing'"
+        >
+          Right Ring
+          <span v-if="selectedChar?.equipment.rightRing" class="displaced-hint">
+            ↪ {{ selectedChar.equipment.rightRing.name }}
+          </span>
+        </button>
+      </div>
+
       <hr class="modal-divider" />
 
       <div class="char-list">
@@ -32,8 +56,8 @@
         >
           <span class="char-name">{{ char.name }}</span>
           <span class="char-level">Lv. {{ char.level }}</span>
-          <span v-if="char.equipment[item.slot]" class="char-equipped">
-            ↪ {{ char.equipment[item.slot]!.name }}
+          <span v-if="!isRing && char.equipment[targetSlot]" class="char-equipped">
+            ↪ {{ char.equipment[targetSlot]!.name }}
           </span>
         </div>
         <p v-if="eligibleChars.length === 0" class="no-chars">
@@ -53,7 +77,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { EquipmentItem } from '@/types'
+import type { EquipmentItem, EquipmentSlot } from '@/types'
 import { useCharactersStore, useInventoryStore } from '@/stores'
 
 const props = defineProps<{ item: EquipmentItem }>()
@@ -62,7 +86,19 @@ const emit = defineEmits<{ close: [] }>()
 const charactersStore = useCharactersStore()
 const inventoryStore = useInventoryStore()
 
+const isRing = props.item.slot === 'ring'
+const ringSlot = ref<'leftRing' | 'rightRing'>('leftRing')
+
+// The actual equipment slot to place the item into
+const targetSlot = computed<EquipmentSlot>(() =>
+  isRing ? ringSlot.value : (props.item.slot as EquipmentSlot)
+)
+
 const selectedCharId = ref<string | null>(charactersStore.selectedCharacterId)
+
+const selectedChar = computed(() =>
+  charactersStore.characters.find((c) => c.id === selectedCharId.value) ?? null
+)
 
 const eligibleChars = computed(() =>
   charactersStore.characters.filter((c) => c.level >= props.item.levelRequirement)
@@ -72,7 +108,7 @@ function onEquip() {
   if (!selectedCharId.value) return
   const removed = inventoryStore.removeItem(props.item.id)
   if (!removed) return
-  const displaced = charactersStore.equipItem(selectedCharId.value, props.item.slot, removed)
+  const displaced = charactersStore.equipItem(selectedCharId.value, targetSlot.value, removed)
   if (displaced) inventoryStore.addItems([displaced])
   emit('close')
 }
@@ -102,6 +138,45 @@ function onEquip() {
 
 .mod-flat     { font-size: 13px; color: #a0c8a0; }
 .mod-increased { font-size: 13px; color: var(--color-rarity-magic); }
+
+.ring-slot-picker {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.ring-slot-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-dark);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ring-slot-btn:hover {
+  border-color: var(--color-border-light);
+  background: var(--color-bg-card-hover);
+}
+
+.ring-slot-btn.active {
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
+  background: var(--color-bg-card);
+}
+
+.displaced-hint {
+  font-size: 10px;
+  color: var(--color-text-dim);
+  font-style: italic;
+}
 
 .modal-divider {
   border: none;

@@ -1,8 +1,8 @@
-import type { EquipmentSlot } from '@/types'
+import type { ItemSlot } from '@/types'
 
 export interface BaseItemTemplate {
   id: string
-  slot: EquipmentSlot
+  slot: ItemSlot
   name: string
   tierMin: number
   tierMax: number
@@ -29,6 +29,6 @@ export const BASE_ITEM_TEMPLATES: BaseItemTemplate[] = [
   { id: 'iron-greaves',    slot: 'boots',     name: 'Iron Greaves',    tierMin: 2, tierMax: 4, baseDefense: 15,          levelRequirement: 5  },
   { id: 'steel-sabatons',  slot: 'boots',     name: 'Steel Sabatons',  tierMin: 4, tierMax: 5, baseDefense: 28,          levelRequirement: 20 },
   // Rings (no base stats, all value in modifiers)
-  { id: 'copper-ring',     slot: 'leftRing',  name: 'Copper Ring',     tierMin: 1, tierMax: 5, levelRequirement: 1 },
-  { id: 'silver-ring',     slot: 'rightRing', name: 'Silver Ring',     tierMin: 1, tierMax: 5, levelRequirement: 1 },
+  { id: 'copper-ring',     slot: 'ring',      name: 'Copper Ring',     tierMin: 1, tierMax: 5, levelRequirement: 1 },
+  { id: 'silver-ring',     slot: 'ring',      name: 'Silver Ring',     tierMin: 1, tierMax: 5, levelRequirement: 1 },
 ]

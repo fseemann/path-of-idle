@@ -70,7 +70,7 @@ export function generateLoot(map: GameMap, character: Character): LootResult {
   for (let i = 0; i < itemCount; i++) {
     const template = eligibleTemplates[Math.floor(Math.random() * eligibleTemplates.length)]!
     const maxMods = MAX_MODIFIERS_BY_SLOT[template.slot]
-    const isRing = template.slot === 'leftRing' || template.slot === 'rightRing'
+    const isRing = template.slot === 'ring'
     const modCount = isRing ? 1 : Math.max(1, Math.ceil(Math.random() * maxMods))
 
     const usedGroups = new Set<ModifierGroup>()
@@ -106,7 +106,7 @@ export function generateLoot(map: GameMap, character: Character): LootResult {
     } else if (isRing) {
       items.push({
         ...base,
-        slot: template.slot,
+        slot: 'ring',
         modifiers: modifiers as [RolledModifier],
       } as RingItem)
     } else {

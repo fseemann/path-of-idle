@@ -9,21 +9,26 @@ export type EquipmentSlot =
   | 'leftRing'
   | 'rightRing'
 
+// ItemSlot is broader than EquipmentSlot: rings in the inventory have slot 'ring'
+// and can be placed into either leftRing or rightRing at equip time.
+export type ItemSlot = EquipmentSlot | 'ring'
+
 export type ItemRarity = 'normal' | 'magic' | 'rare'
 
-export const MAX_MODIFIERS_BY_SLOT: Record<EquipmentSlot, number> = {
+export const MAX_MODIFIERS_BY_SLOT: Record<ItemSlot, number> = {
   helmet: 4,
   bodyArmor: 4,
   weapon: 4,
   boots: 4,
   leftRing: 1,
   rightRing: 1,
+  ring: 1,
 }
 
 interface BaseItem {
   id: string
   name: string
-  slot: EquipmentSlot
+  slot: ItemSlot
   rarity: ItemRarity
   levelRequirement: number
   statRequirements: Partial<BaseStats>
@@ -41,7 +46,7 @@ export interface WeaponItem extends BaseItem {
 }
 
 export interface RingItem extends BaseItem {
-  slot: 'leftRing' | 'rightRing'
+  slot: 'ring'
   modifiers: [RolledModifier]
 }
 

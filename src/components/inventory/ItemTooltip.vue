@@ -28,20 +28,21 @@
 </template>
 
 <script setup lang="ts">
-import type { EquipmentItem, EquipmentSlot } from '@/types'
+import type { EquipmentItem } from '@/types'
 
 const props = defineProps<{ item: EquipmentItem }>()
 
-const SLOT_LABELS: Record<EquipmentSlot, string> = {
+const SLOT_LABELS: Record<string, string> = {
   helmet: 'Helmet',
   bodyArmor: 'Body Armour',
   weapon: 'Weapon',
   boots: 'Boots',
   leftRing: 'Left Ring',
   rightRing: 'Right Ring',
+  ring: 'Ring',
 }
 
-const slotLabel = SLOT_LABELS[props.item.slot]
+const slotLabel = SLOT_LABELS[props.item.slot] ?? props.item.slot
 </script>
 
 <style scoped>
