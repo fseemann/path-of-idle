@@ -25,8 +25,13 @@ function weightedRandom<T extends { weight: number }>(pool: T[]): T | null {
   return pool[pool.length - 1] ?? null
 }
 
-function rollModifier(usedGroups: Set<ModifierGroup>): RolledModifier | null {
-  const eligible = MODIFIER_POOL.filter((m) => !usedGroups.has(m.group))
+function rollModifier(usedGroups: Set<ModifierGroup>, itemTier: number, isRing: boolean): RolledModifier | null {
+  const eligible = MODIFIER_POOL.filter(
+    (m) =>
+      !usedGroups.has(m.group) &&
+      (m.minItemTier ?? 1) <= itemTier &&
+      (!m.ringOnly || isRing),
+  )
   const def = weightedRandom(eligible)
   if (!def) return null
   const value = Math.round(def.minValue + Math.random() * (def.maxValue - def.minValue))
@@ -35,6 +40,7 @@ function rollModifier(usedGroups: Set<ModifierGroup>): RolledModifier | null {
     group: def.group,
     kind: def.kind,
     target: def.target,
+    ...(def.extraTargets ? { extraTargets: def.extraTargets } : {}),
     value,
     label: def.label.replace('{value}', String(value)),
   }
@@ -86,7 +92,7 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
     const modifiers: RolledModifier[] = []
 
     for (let m = 0; m < modCount; m++) {
-      const mod = rollModifier(usedGroups)
+      const mod = rollModifier(usedGroups, map.tier, isRing)
       if (mod) {
         modifiers.push(mod)
         usedGroups.add(mod.group)
@@ -96,12 +102,18 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
     const rarity: ItemRarity =
       modifiers.length >= 4 ? 'rare' : modifiers.length >= 2 ? 'magic' : 'normal'
 
+    // Rings get a level requirement that reflects the map tier they dropped in
+    const levelRequirement = isRing
+      ? Math.max(1, (map.tier - 1) * 15)
+      : template.levelRequirement
+
     const base = {
       id: crypto.randomUUID(),
       name: generateItemName(template.name, rarity),
       slot: template.slot,
       rarity,
-      levelRequirement: template.levelRequirement,
+      levelRequirement,
+      itemTier: map.tier,
       statRequirements: {},
       modifiers,
     }

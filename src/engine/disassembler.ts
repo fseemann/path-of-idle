@@ -35,8 +35,16 @@ export function applyExalt(item: EquipmentItem): EquipmentItem | null {
   const max = MAX_MODIFIERS_BY_SLOT[item.slot]
   if (item.modifiers.length >= max) return null
 
+  const isRing = item.slot === 'ring'
+  const itemTier = item.itemTier ?? 1
+
   const usedGroups = new Set<ModifierGroup>(item.modifiers.map((m) => m.group))
-  const eligible = MODIFIER_POOL.filter((m) => !usedGroups.has(m.group))
+  const eligible = MODIFIER_POOL.filter(
+    (m) =>
+      !usedGroups.has(m.group) &&
+      (m.minItemTier ?? 1) <= itemTier &&
+      (!m.ringOnly || isRing),
+  )
   if (eligible.length === 0) return null
 
   const total = eligible.reduce((sum, m) => sum + m.weight, 0)
@@ -53,6 +61,7 @@ export function applyExalt(item: EquipmentItem): EquipmentItem | null {
     group: def.group,
     kind: def.kind,
     target: def.target,
+    ...(def.extraTargets ? { extraTargets: def.extraTargets } : {}),
     value,
     label: def.label.replace('{value}', String(value)),
   }

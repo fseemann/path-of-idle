@@ -31,6 +31,8 @@ interface BaseItem {
   slot: ItemSlot
   rarity: ItemRarity
   levelRequirement: number
+  /** Map tier the item dropped in; gates which modifier tiers can be crafted onto it. Defaults to 1 for legacy items. */
+  itemTier?: number
   statRequirements: Partial<BaseStats>
   modifiers: RolledModifier[]
   locked?: boolean

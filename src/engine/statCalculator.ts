@@ -39,39 +39,42 @@ export function calculateStats(character: Character): ComputedStats {
 
   for (const item of items) {
     for (const mod of item.modifiers) {
-      switch (mod.target) {
-        case 'health':
-          flatHealth += mod.value
-          break
-        case 'mana':
-          flatMana += mod.value
-          break
-        case 'defense':
-          if (mod.kind === 'flat') flatDefense += mod.value
-          else pctDefense += mod.value
-          break
-        case 'attackDamage':
-          if (mod.kind === 'flat') flatAttackDamage += mod.value
-          else pctAttackDamage += mod.value
-          break
-        case 'attackSpeed':
-          pctAttackSpeed += mod.value
-          break
-        case 'movementSpeed':
-          pctMovementSpeed += mod.value
-          break
-        case 'fireResistance':
-          fireRes += mod.value
-          break
-        case 'iceResistance':
-          iceRes += mod.value
-          break
-        case 'lightningResistance':
-          lightningRes += mod.value
-          break
-        case 'chaosResistance':
-          chaosRes += mod.value
-          break
+      const allTargets = [mod.target, ...(mod.extraTargets ?? [])]
+      for (const target of allTargets) {
+        switch (target) {
+          case 'health':
+            flatHealth += mod.value
+            break
+          case 'mana':
+            flatMana += mod.value
+            break
+          case 'defense':
+            if (mod.kind === 'flat') flatDefense += mod.value
+            else pctDefense += mod.value
+            break
+          case 'attackDamage':
+            if (mod.kind === 'flat') flatAttackDamage += mod.value
+            else pctAttackDamage += mod.value
+            break
+          case 'attackSpeed':
+            pctAttackSpeed += mod.value
+            break
+          case 'movementSpeed':
+            pctMovementSpeed += mod.value
+            break
+          case 'fireResistance':
+            fireRes += mod.value
+            break
+          case 'iceResistance':
+            iceRes += mod.value
+            break
+          case 'lightningResistance':
+            lightningRes += mod.value
+            break
+          case 'chaosResistance':
+            chaosRes += mod.value
+            break
+        }
       }
     }
   }
