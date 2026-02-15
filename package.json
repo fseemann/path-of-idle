@@ -1,0 +1,23 @@
+{
+  "name": "path-of-idle",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "vue": "^3.5.0",
+    "pinia": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vue/tsconfig": "^0.7.0",
+    "typescript": "^5",
+    "vite": "^6.0.0",
+    "vue-tsc": "^2.0.0"
+  }
+}
