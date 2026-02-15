@@ -4,6 +4,7 @@ import type { MapRun, RunProgress } from '@/types'
 import { GAME_MAPS } from '@/data/maps'
 import { generateLoot } from '@/engine/lootGenerator'
 import { calculateStats } from '@/engine/statCalculator'
+import { simulateCombat } from '@/engine/combatSimulator'
 import { useCharactersStore } from './characters'
 import { useInventoryStore } from './inventory'
 
@@ -110,7 +111,11 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
     const character = charactersStore.getCharacter(run.characterId)
 
     if (map && character) {
-      const loot = generateLoot(map, character)
+      const stats = calculateStats(character)
+      const { survivalRatio } = simulateCombat(map, stats)
+      run.survivalRatio = survivalRatio
+
+      const loot = generateLoot(map, character, survivalRatio)
       loot.runId = run.id
       inventoryStore.addItems(loot.items)
       charactersStore.awardXp(run.characterId, loot.xpAwarded)

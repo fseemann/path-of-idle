@@ -15,6 +15,13 @@
       <span>×{{ map.lootMultiplier.toFixed(1) }} loot</span>
     </div>
 
+    <div class="enemy-list">
+      <span v-for="enemy in map.enemies" :key="enemy.name" class="enemy-chip" :class="`dmg-${enemy.damageType}`">
+        <span class="enemy-dot" />
+        {{ enemy.name }}
+      </span>
+    </div>
+
     <RunProgressBar v-if="activeRun" :run-id="activeRun.id" />
 
     <div class="map-actions">
@@ -153,6 +160,37 @@ function onStop() {
   font-size: 12px;
   color: var(--color-text-secondary);
 }
+
+.enemy-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.enemy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px 2px 5px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.enemy-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+}
+
+.dmg-physical { color: #b0a090; border-color: #5a4a3a; }
+.dmg-fire     { color: var(--color-fire);      border-color: #6a2010; }
+.dmg-cold     { color: var(--color-ice);       border-color: #204060; }
+.dmg-lightning{ color: var(--color-lightning); border-color: #605010; }
+.dmg-chaos    { color: var(--color-chaos);     border-color: #601840; }
 
 .map-actions {
   display: flex;

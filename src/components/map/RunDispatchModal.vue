@@ -45,6 +45,12 @@
             <span :class="rarityBonusPct > 0 ? 'positive' : ''">+{{ rarityBonusPct }}%</span>
           </span>
         </div>
+        <div class="stat-pill">
+          <span class="stat-label">Survival</span>
+          <span class="stat-value" :class="survivalPct >= 100 ? 'positive' : survivalPct < 30 ? 'negative' : ''">
+            {{ survivalPct >= 100 ? '100%' : survivalPct + '%' }}
+          </span>
+        </div>
       </div>
 
       <label class="auto-rerun-toggle">
@@ -70,6 +76,7 @@ import { ref, computed } from 'vue'
 import type { GameMap } from '@/types'
 import { useCharactersStore, useMapRunsStore } from '@/stores'
 import { calculateStats } from '@/engine/statCalculator'
+import { simulateCombat } from '@/engine/combatSimulator'
 
 const props = defineProps<{ map: GameMap }>()
 const emit = defineEmits<{ close: [] }>()
@@ -113,6 +120,13 @@ const rarityBonusPct = computed(() => {
   const stats = calculateStats(selectedCharacter.value)
   const dps = stats.attackDamage * stats.attackSpeed
   return Math.round(Math.min(75, Math.max(0, (dps - 3) / 30) * 100))
+})
+
+const survivalPct = computed(() => {
+  if (!selectedCharacter.value) return 100
+  const stats = calculateStats(selectedCharacter.value)
+  const { survivalRatio } = simulateCombat(props.map, stats)
+  return Math.round(Math.min(1, survivalRatio) * 100)
 })
 
 function isBusy(characterId: string): boolean {

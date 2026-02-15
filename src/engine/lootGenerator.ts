@@ -51,13 +51,14 @@ function generateItemName(baseName: string, rarity: ItemRarity): string {
   return `${prefix} ${baseName} ${suffix}`
 }
 
-export function generateLoot(map: GameMap, character: Character): LootResult {
+export function generateLoot(map: GameMap, character: Character, survivalRatio = 1): LootResult {
   const stats = calculateStats(character)
   const dps = stats.attackDamage * stats.attackSpeed
   const bonusItems = Math.floor(Math.max(0, dps / 15.0 - 1))
   // Higher DPS gives a chance to roll one extra modifier per item, biasing toward higher rarity
   const extraModChance = Math.min(0.75, Math.max(0, (dps - 3) / 30))
-  const itemCount = Math.max(1, Math.round(map.lootMultiplier * (0.5 + Math.random())) + bonusItems)
+  const rawCount = Math.round(map.lootMultiplier * (0.5 + Math.random())) + bonusItems
+  const itemCount = Math.max(1, Math.round(rawCount * survivalRatio))
   const items: EquipmentItem[] = []
 
   const eligibleTemplates = BASE_ITEM_TEMPLATES.filter(
@@ -68,7 +69,7 @@ export function generateLoot(map: GameMap, character: Character): LootResult {
       runId: '',
       characterId: character.id,
       items: [],
-      xpAwarded: Math.round(map.xpReward * (0.9 + Math.random() * 0.2)),
+      xpAwarded: Math.round(map.xpReward * survivalRatio * (0.9 + Math.random() * 0.2)),
       generatedAt: Date.now(),
     }
   }
@@ -129,7 +130,7 @@ export function generateLoot(map: GameMap, character: Character): LootResult {
     runId: '',
     characterId: character.id,
     items,
-    xpAwarded: Math.round(map.xpReward * (0.9 + Math.random() * 0.2)),
+    xpAwarded: Math.round(map.xpReward * survivalRatio * (0.9 + Math.random() * 0.2)),
     generatedAt: Date.now(),
   }
 }

@@ -1,5 +1,18 @@
 export type MapTier = 1 | 2 | 3 | 4 | 5
 
+export interface DamageProfile {
+  physical: number
+  fire: number
+  cold: number
+  lightning: number
+  chaos: number
+}
+
+export interface MapEnemy {
+  name: string
+  damageType: keyof DamageProfile
+}
+
 export interface GameMap {
   id: string
   name: string
@@ -9,6 +22,9 @@ export interface GameMap {
   description: string
   lootMultiplier: number
   xpReward: number
+  enemyDps: number
+  damageProfile: DamageProfile
+  enemies: MapEnemy[]
 }
 
 export interface MapRun {
@@ -20,6 +36,7 @@ export interface MapRun {
   completedAt: number | null
   lootCollected: boolean
   autoRerun: boolean
+  survivalRatio?: number
 }
 
 export interface RunProgress {

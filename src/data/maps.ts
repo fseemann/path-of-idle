@@ -10,6 +10,12 @@ export const GAME_MAPS: GameMap[] = [
     description: 'A dark burrow filled with wild animals. A good starting ground.',
     lootMultiplier: 1.0,
     xpReward: 50,
+    enemyDps: 3,
+    damageProfile: { physical: 1.0, fire: 0, cold: 0, lightning: 0, chaos: 0 },
+    enemies: [
+      { name: 'Rabid Wolf', damageType: 'physical' },
+      { name: 'Cave Bear', damageType: 'physical' },
+    ],
   },
   {
     id: 'crypt',
@@ -20,6 +26,13 @@ export const GAME_MAPS: GameMap[] = [
     description: 'Restless skeletons guard the remains of the fallen.',
     lootMultiplier: 1.4,
     xpReward: 150,
+    enemyDps: 5,
+    damageProfile: { physical: 0.7, fire: 0, cold: 0.3, lightning: 0, chaos: 0 },
+    enemies: [
+      { name: 'Skeleton Warrior', damageType: 'physical' },
+      { name: 'Bone Archer', damageType: 'physical' },
+      { name: 'Frost Wraith', damageType: 'cold' },
+    ],
   },
   {
     id: 'shore',
@@ -30,6 +43,13 @@ export const GAME_MAPS: GameMap[] = [
     description: 'Corrupted tidal creatures swarm the beaches.',
     lootMultiplier: 1.8,
     xpReward: 400,
+    enemyDps: 7,
+    damageProfile: { physical: 0.5, fire: 0.3, cold: 0, lightning: 0.2, chaos: 0 },
+    enemies: [
+      { name: 'Tide Lurker', damageType: 'physical' },
+      { name: 'Scalded Crab', damageType: 'fire' },
+      { name: 'Storm Eel', damageType: 'lightning' },
+    ],
   },
   {
     id: 'depths',
@@ -40,6 +60,13 @@ export const GAME_MAPS: GameMap[] = [
     description: 'Ancient constructs protect forgotten treasures deep underground.',
     lootMultiplier: 2.5,
     xpReward: 900,
+    enemyDps: 10,
+    damageProfile: { physical: 0.4, fire: 0.2, cold: 0.2, lightning: 0.2, chaos: 0 },
+    enemies: [
+      { name: 'Stone Colossus', damageType: 'physical' },
+      { name: 'Ember Construct', damageType: 'fire' },
+      { name: 'Frost Sentinel', damageType: 'cold' },
+    ],
   },
   {
     id: 'pinnacle',
@@ -50,5 +77,12 @@ export const GAME_MAPS: GameMap[] = [
     description: 'The stronghold of a corrupted warlord. Tremendous danger, tremendous reward.',
     lootMultiplier: 4.0,
     xpReward: 2500,
+    enemyDps: 14,
+    damageProfile: { physical: 0.35, fire: 0.2, cold: 0.15, lightning: 0.15, chaos: 0.15 },
+    enemies: [
+      { name: "Warlord's Blade", damageType: 'physical' },
+      { name: 'Hellfire Templar', damageType: 'fire' },
+      { name: 'Chaos Harbinger', damageType: 'chaos' },
+    ],
   },
 ]
