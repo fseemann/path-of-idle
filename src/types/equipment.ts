@@ -20,9 +20,9 @@ export const MAX_MODIFIERS_BY_SLOT: Record<ItemSlot, number> = {
   bodyArmor: 4,
   weapon: 4,
   boots: 4,
-  leftRing: 1,
-  rightRing: 1,
-  ring: 1,
+  leftRing: 4,
+  rightRing: 4,
+  ring: 4,
 }
 
 interface BaseItem {
@@ -47,7 +47,6 @@ export interface WeaponItem extends BaseItem {
 
 export interface RingItem extends BaseItem {
   slot: 'ring'
-  modifiers: [RolledModifier]
 }
 
 export type EquipmentItem = ArmorItem | WeaponItem | RingItem

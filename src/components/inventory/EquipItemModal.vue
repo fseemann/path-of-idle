@@ -19,8 +19,8 @@
         >{{ mod.label }}</div>
       </div>
 
-      <!-- Crafting section (disabled for rings) -->
-      <div v-if="!isRing" class="craft-section">
+      <!-- Crafting section -->
+      <div class="craft-section">
         <div class="section-label">Crafting</div>
         <div class="craft-row">
           <button
@@ -141,13 +141,12 @@ const eligibleChars = computed(() =>
 )
 
 const canAnnul = computed(() =>
-  !isRing.value &&
   currencyStore.annulments >= 1 &&
   localItem.value.modifiers.length > 0
 )
 
 const canExalt = computed(() => {
-  if (isRing.value || currencyStore.exalts < 1) return false
+  if (currencyStore.exalts < 1) return false
   return localItem.value.modifiers.length < MAX_MODIFIERS_BY_SLOT[localItem.value.slot]
 })
 

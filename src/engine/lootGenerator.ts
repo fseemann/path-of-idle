@@ -115,7 +115,6 @@ export function generateLoot(map: GameMap, character: Character): LootResult {
       items.push({
         ...base,
         slot: 'ring',
-        modifiers: modifiers as [RolledModifier],
       } as RingItem)
     } else {
       items.push({

@@ -21,17 +21,17 @@ function rarityFromModCount(count: number): EquipmentItem['rarity'] {
   return 'normal'
 }
 
-/** Remove one random modifier. Returns null for rings or items with no mods. */
+/** Remove one random modifier. Returns null for items with no mods. */
 export function applyAnnulment(item: EquipmentItem): EquipmentItem | null {
-  if (item.slot === 'ring' || item.modifiers.length === 0) return null
+  if (item.modifiers.length === 0) return null
   const idx = Math.floor(Math.random() * item.modifiers.length)
   const newMods = item.modifiers.filter((_, i) => i !== idx)
   return { ...item, modifiers: newMods, rarity: rarityFromModCount(newMods.length) }
 }
 
-/** Add one random modifier respecting group uniqueness. Returns null for rings or full items. */
+
+/** Add one random modifier respecting group uniqueness. Returns null for full items. */
 export function applyExalt(item: EquipmentItem): EquipmentItem | null {
-  if (item.slot === 'ring') return null
   const max = MAX_MODIFIERS_BY_SLOT[item.slot]
   if (item.modifiers.length >= max) return null
 
