@@ -12,6 +12,7 @@ import type {
 import { ModifierGroup, MAX_MODIFIERS_BY_SLOT } from '@/types'
 import { MODIFIER_POOL } from '@/data/modifierPool'
 import { BASE_ITEM_TEMPLATES } from '@/data/baseItems'
+import { calculateStats } from '@/engine/statCalculator'
 
 function weightedRandom<T extends { weight: number }>(pool: T[]): T | null {
   if (pool.length === 0) return null
@@ -51,7 +52,12 @@ function generateItemName(baseName: string, rarity: ItemRarity): string {
 }
 
 export function generateLoot(map: GameMap, character: Character): LootResult {
-  const itemCount = Math.max(1, Math.round(map.lootMultiplier * (0.5 + Math.random())))
+  const stats = calculateStats(character)
+  const dps = stats.attackDamage * stats.attackSpeed
+  const bonusItems = Math.floor(Math.max(0, dps / 15.0 - 1))
+  // Higher DPS gives a chance to roll one extra modifier per item, biasing toward higher rarity
+  const extraModChance = Math.min(0.75, Math.max(0, (dps - 3) / 30))
+  const itemCount = Math.max(1, Math.round(map.lootMultiplier * (0.5 + Math.random())) + bonusItems)
   const items: EquipmentItem[] = []
 
   const eligibleTemplates = BASE_ITEM_TEMPLATES.filter(
@@ -71,7 +77,9 @@ export function generateLoot(map: GameMap, character: Character): LootResult {
     const template = eligibleTemplates[Math.floor(Math.random() * eligibleTemplates.length)]!
     const maxMods = MAX_MODIFIERS_BY_SLOT[template.slot]
     const isRing = template.slot === 'ring'
-    const modCount = isRing ? 1 : Math.max(1, Math.ceil(Math.random() * maxMods))
+    const baseModCount = Math.max(1, Math.ceil(Math.random() * maxMods))
+    const extraMod = !isRing && Math.random() < extraModChance ? 1 : 0
+    const modCount = isRing ? 1 : Math.min(maxMods, baseModCount + extraMod)
 
     const usedGroups = new Set<ModifierGroup>()
     const modifiers: RolledModifier[] = []

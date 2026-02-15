@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import type { MapRun, RunProgress } from '@/types'
 import { GAME_MAPS } from '@/data/maps'
 import { generateLoot } from '@/engine/lootGenerator'
+import { calculateStats } from '@/engine/statCalculator'
 import { useCharactersStore } from './characters'
 import { useInventoryStore } from './inventory'
 
@@ -70,13 +71,22 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
       existing.lootCollected = true
     }
 
+    const character = useCharactersStore().getCharacter(characterId)
+    const baseDurationMs = map.durationSeconds * 1000
+    let durationMs = baseDurationMs
+    if (character) {
+      const stats = calculateStats(character)
+      const speedFactor = Math.max(0.5, 100 / stats.movementSpeed)
+      durationMs = Math.round(baseDurationMs * speedFactor)
+    }
+
     const runId = crypto.randomUUID()
     runs.value.push({
       id: runId,
       mapId,
       characterId,
       startedAt: Date.now(),
-      durationMs: map.durationSeconds * 1000,
+      durationMs,
       completedAt: null,
       lootCollected: false,
       autoRerun,
