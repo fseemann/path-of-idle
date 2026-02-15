@@ -95,13 +95,13 @@ function openEquip(item: EquipmentItem) {
   equipTarget.value = item
 }
 
-const normalCount = computed(() => inventoryStore.items.filter((i) => i.rarity === 'normal').length)
-const magicCount  = computed(() => inventoryStore.items.filter((i) => i.rarity === 'magic').length)
-const rareCount   = computed(() => inventoryStore.items.filter((i) => i.rarity === 'rare').length)
+const normalCount = computed(() => inventoryStore.items.filter((i) => i.rarity === 'normal' && !i.locked).length)
+const magicCount  = computed(() => inventoryStore.items.filter((i) => i.rarity === 'magic'  && !i.locked).length)
+const rareCount   = computed(() => inventoryStore.items.filter((i) => i.rarity === 'rare'   && !i.locked).length)
 
 function disassembleAllRarity(rarity: ItemRarity) {
-  // Snapshot the list first so we're not mutating while iterating
-  const targets = inventoryStore.items.filter((i) => i.rarity === rarity).slice()
+  // Snapshot the list first so we're not mutating while iterating; skip locked items
+  const targets = inventoryStore.items.filter((i) => i.rarity === rarity && !i.locked).slice()
   for (const item of targets) {
     currencyStore.disassembleItem(item)
     inventoryStore.removeItem(item.id)

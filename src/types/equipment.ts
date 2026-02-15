@@ -33,6 +33,7 @@ interface BaseItem {
   levelRequirement: number
   statRequirements: Partial<BaseStats>
   modifiers: RolledModifier[]
+  locked?: boolean
 }
 
 export interface ArmorItem extends BaseItem {

@@ -1,22 +1,55 @@
 <template>
   <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-box">
-      <h3 :class="`rarity-${localItem.rarity}`">{{ localItem.name }}</h3>
 
-      <div v-if="'baseDefense' in localItem" class="modal-stat">
-        <span>Base Armour:</span> <span>{{ (localItem as ArmorItem).baseDefense }}</span>
-      </div>
-      <div v-if="'baseAttackDamage' in localItem" class="modal-stat">
-        <span>Attack Damage:</span>
-        <span>{{ (localItem as WeaponItem).baseAttackDamage[0] }}–{{ (localItem as WeaponItem).baseAttackDamage[1] }}</span>
-      </div>
+      <!-- Side-by-side item comparison -->
+      <div class="compare-grid">
+        <!-- New item -->
+        <div class="compare-pane">
+          <div class="section-label">New Item</div>
+          <div :class="`rarity-${localItem.rarity}`" class="compare-name">{{ localItem.name }}</div>
+          <div v-if="'baseDefense' in localItem" class="modal-stat">
+            <span>Base Armour:</span> <span>{{ (localItem as ArmorItem).baseDefense }}</span>
+          </div>
+          <div v-if="'baseAttackDamage' in localItem" class="modal-stat">
+            <span>Attack Damage:</span>
+            <span>{{ (localItem as WeaponItem).baseAttackDamage[0] }}–{{ (localItem as WeaponItem).baseAttackDamage[1] }}</span>
+          </div>
+          <div class="mod-list">
+            <div
+              v-for="(mod, i) in localItem.modifiers"
+              :key="i"
+              :class="mod.kind === 'increased' ? 'mod-increased' : 'mod-flat'"
+            >{{ mod.label }}</div>
+            <div v-if="localItem.modifiers.length === 0" class="mod-none">No modifiers</div>
+          </div>
+        </div>
 
-      <div class="mod-list">
-        <div
-          v-for="(mod, i) in localItem.modifiers"
-          :key="i"
-          :class="mod.kind === 'increased' ? 'mod-increased' : 'mod-flat'"
-        >{{ mod.label }}</div>
+        <!-- Currently equipped -->
+        <div class="compare-pane compare-pane--equipped">
+          <div class="section-label">Currently Equipped</div>
+          <template v-if="equippedItem">
+            <div :class="`rarity-${equippedItem.rarity}`" class="compare-name">{{ equippedItem.name }}</div>
+            <div v-if="'baseDefense' in equippedItem" class="modal-stat">
+              <span>Base Armour:</span> <span>{{ (equippedItem as ArmorItem).baseDefense }}</span>
+            </div>
+            <div v-if="'baseAttackDamage' in equippedItem" class="modal-stat">
+              <span>Attack Damage:</span>
+              <span>{{ (equippedItem as WeaponItem).baseAttackDamage[0] }}–{{ (equippedItem as WeaponItem).baseAttackDamage[1] }}</span>
+            </div>
+            <div class="mod-list">
+              <div
+                v-for="(mod, i) in equippedItem.modifiers"
+                :key="i"
+                :class="mod.kind === 'increased' ? 'mod-increased' : 'mod-flat'"
+              >{{ mod.label }}</div>
+              <div v-if="equippedItem.modifiers.length === 0" class="mod-none">No modifiers</div>
+            </div>
+          </template>
+          <div v-else class="compare-empty">
+            {{ selectedCharId ? 'Empty slot' : 'Select a character' }}
+          </div>
+        </div>
       </div>
 
       <!-- Crafting section -->
@@ -93,9 +126,9 @@
 
       <div class="modal-actions">
         <button @click="emit('close')">Cancel</button>
-        <button class="disassemble-btn" @click="onDisassemble">
+        <button class="disassemble-btn" :disabled="localItem.locked" @click="onDisassemble">
           Disassemble
-          <span class="yield-hint">→ {{ yieldText }}</span>
+          <span class="yield-hint">{{ localItem.locked ? '(locked)' : `→ ${yieldText}` }}</span>
         </button>
         <button class="primary" :disabled="!selectedCharId" @click="onEquip">
           Equip
@@ -134,6 +167,10 @@ const selectedCharId = ref<string | null>(charactersStore.selectedCharacterId)
 
 const selectedChar = computed(() =>
   charactersStore.characters.find((c) => c.id === selectedCharId.value) ?? null
+)
+
+const equippedItem = computed(() =>
+  selectedChar.value?.equipment[targetSlot.value] ?? null
 )
 
 const eligibleChars = computed(() =>
@@ -197,6 +234,39 @@ function onEquip() {
   margin-bottom: var(--spacing-sm);
 }
 
+/* Side-by-side comparison */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.compare-pane {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-dark);
+}
+
+.compare-pane--equipped {
+  border-color: var(--color-border);
+  opacity: 0.85;
+}
+
+.compare-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.compare-empty {
+  font-size: 12px;
+  color: var(--color-text-dim);
+  font-style: italic;
+  margin-top: var(--spacing-xs);
+}
+
 .modal-stat {
   display: flex;
   justify-content: space-between;
@@ -206,7 +276,7 @@ function onEquip() {
 }
 
 .mod-list {
-  margin: var(--spacing-sm) 0;
+  margin: var(--spacing-sm) 0 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -214,6 +284,12 @@ function onEquip() {
 
 .mod-flat     { font-size: 13px; color: #a0c8a0; }
 .mod-increased { font-size: 13px; color: var(--color-rarity-magic); }
+
+.mod-none {
+  font-size: 12px;
+  color: var(--color-text-dim);
+  font-style: italic;
+}
 
 /* Crafting */
 .craft-section {
@@ -392,9 +468,14 @@ function onEquip() {
   transition: all 0.15s;
 }
 
-.disassemble-btn:hover {
+.disassemble-btn:not(:disabled):hover {
   background: #3a1a1a;
   border-color: #c07070;
+}
+
+.disassemble-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .yield-hint {

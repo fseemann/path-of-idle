@@ -1,13 +1,19 @@
 <template>
   <div
     class="item-card"
-    :class="`border-${item.rarity}`"
+    :class="[`border-${item.rarity}`, { 'item-locked': item.locked }]"
     @mouseenter="showTip = true"
     @mouseleave="showTip = false"
     @click="emit('equip', item)"
   >
     <div class="item-header">
       <span class="item-name" :class="`rarity-${item.rarity}`">{{ item.name }}</span>
+      <button
+        class="lock-btn"
+        :class="{ 'is-locked': item.locked }"
+        :title="item.locked ? 'Unlock item' : 'Lock item (prevents disassembly)'"
+        @click.stop="inventoryStore.toggleLock(item.id)"
+      >{{ item.locked ? '🔒' : '🔓' }}</button>
       <span class="item-slot">{{ SLOT_LABELS[item.slot] }}</span>
     </div>
     <div class="item-mods">
@@ -34,10 +40,13 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import type { EquipmentItem } from '@/types'
+import { useInventoryStore } from '@/stores'
 import ItemTooltip from './ItemTooltip.vue'
 
 defineProps<{ item: EquipmentItem }>()
 const emit = defineEmits<{ equip: [item: EquipmentItem] }>()
+
+const inventoryStore = useInventoryStore()
 
 const SLOT_LABELS: Record<string, string> = {
   helmet: 'Helmet',
@@ -75,6 +84,10 @@ function onMouseMove(e: MouseEvent) {
   background: var(--color-bg-card-hover);
 }
 
+.item-locked {
+  opacity: 0.75;
+}
+
 .item-header {
   display: flex;
   align-items: baseline;
@@ -88,6 +101,24 @@ function onMouseMove(e: MouseEvent) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+}
+
+.lock-btn {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.4;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.lock-btn:hover,
+.lock-btn.is-locked {
+  opacity: 1;
 }
 
 .item-slot {

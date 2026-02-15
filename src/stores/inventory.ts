@@ -47,6 +47,11 @@ export const useInventoryStore = defineStore('inventory', () => {
     return items.value.splice(idx, 1)[0] ?? null
   }
 
+  function toggleLock(itemId: string): void {
+    const item = items.value.find((i) => i.id === itemId)
+    if (item) item.locked = !item.locked
+  }
+
   function selectItem(id: string | null) {
     selectedItemId.value = id
   }
@@ -58,6 +63,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     itemsBySlot,
     addItems,
     removeItem,
+    toggleLock,
     selectItem,
   }
 })
