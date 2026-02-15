@@ -102,10 +102,7 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
     const rarity: ItemRarity =
       modifiers.length >= 4 ? 'rare' : modifiers.length >= 2 ? 'magic' : 'normal'
 
-    // Rings get a level requirement that reflects the map tier they dropped in
-    const levelRequirement = isRing
-      ? Math.max(1, (map.tier - 1) * 15)
-      : template.levelRequirement
+    const levelRequirement = template.levelRequirement
 
     const base = {
       id: crypto.randomUUID(),
