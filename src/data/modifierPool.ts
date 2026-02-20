@@ -380,26 +380,6 @@ export const MODIFIER_POOL: ModifierDefinition[] = [
     weight: 50,
     label: '{value}% increased Physical Damage',
   },
-  {
-    id: 'pct-attack-speed',
-    group: ModifierGroup.IncreasedAttackSpeed,
-    kind: 'increased',
-    target: 'attackSpeed',
-    minValue: 5,
-    maxValue: 20,
-    weight: 50,
-    label: '{value}% increased Attack Speed',
-  },
-  {
-    id: 'pct-move-speed',
-    group: ModifierGroup.IncreasedMovementSpeed,
-    kind: 'increased',
-    target: 'movementSpeed',
-    minValue: 5,
-    maxValue: 20,
-    weight: 45,
-    label: '{value}% increased Movement Speed',
-  },
 
   // ── Slot-Specific Modifiers ──────────────────────────────────────────────
 
