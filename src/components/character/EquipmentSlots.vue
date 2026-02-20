@@ -55,6 +55,7 @@ const SLOTS: { id: EquipmentSlot; label: string }[] = [
   { id: 'helmet',    label: 'Helmet' },
   { id: 'bodyArmor', label: 'Body Armour' },
   { id: 'weapon',    label: 'Weapon' },
+  { id: 'gloves',    label: 'Gloves' },
   { id: 'boots',     label: 'Boots' },
   { id: 'leftRing',  label: 'Left Ring' },
   { id: 'rightRing', label: 'Right Ring' },

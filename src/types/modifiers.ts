@@ -1,4 +1,5 @@
 import type { ComputedStats } from './stats'
+import type { EquipmentSlot, ItemSlot } from './equipment'
 
 export enum ModifierGroup {
   MaximumLife = 'MaximumLife',
@@ -13,6 +14,16 @@ export enum ModifierGroup {
   AddedStrength = 'AddedStrength',
   AddedDexterity = 'AddedDexterity',
   AddedIntelligence = 'AddedIntelligence',
+  // Slot-specific modifier groups
+  IncreasedAttackSpeed_Gloves = 'IncreasedAttackSpeed_Gloves',
+  AddedDexterity_Gloves = 'AddedDexterity_Gloves',
+  IncreasedMovementSpeed_Boots = 'IncreasedMovementSpeed_Boots',
+  AddedIntelligence_Helmet = 'AddedIntelligence_Helmet',
+  MaximumMana_Helmet = 'MaximumMana_Helmet',
+  AddedPhysicalDamage_Weapon = 'AddedPhysicalDamage_Weapon',
+  IncreasedAttackSpeed_Weapon = 'IncreasedAttackSpeed_Weapon',
+  MaximumLife_Armor = 'MaximumLife_Armor',
+  IncreasedArmor_Armor = 'IncreasedArmor_Armor',
 }
 
 export type ModifierKind = 'flat' | 'increased'
@@ -33,8 +44,8 @@ export interface ModifierDefinition {
   tier?: number
   /** Minimum item tier required to roll this modifier (1–5). Defaults to 1. */
   minItemTier?: number
-  /** If true, only rolls on ring items. */
-  ringOnly?: boolean
+  /** If specified, only rolls on these item slots. */
+  allowedSlots?: ItemSlot[]
 }
 
 export interface RolledModifier {

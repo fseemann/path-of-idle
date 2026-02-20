@@ -8,6 +8,7 @@ import type {
   WeaponItem,
   RingItem,
   ItemRarity,
+  ItemSlot,
 } from '@/types'
 import { ModifierGroup, MAX_MODIFIERS_BY_SLOT } from '@/types'
 import { MODIFIER_POOL } from '@/data/modifierPool'
@@ -25,12 +26,12 @@ function weightedRandom<T extends { weight: number }>(pool: T[]): T | null {
   return pool[pool.length - 1] ?? null
 }
 
-function rollModifier(usedGroups: Set<ModifierGroup>, itemTier: number, isRing: boolean): RolledModifier | null {
+function rollModifier(usedGroups: Set<ModifierGroup>, itemTier: number, slot: ItemSlot): RolledModifier | null {
   const eligible = MODIFIER_POOL.filter(
     (m) =>
       !usedGroups.has(m.group) &&
       (m.minItemTier ?? 1) <= itemTier &&
-      (!m.ringOnly || isRing),
+      (!m.allowedSlots || m.allowedSlots.includes(slot)),
   )
   const def = weightedRandom(eligible)
   if (!def) return null
@@ -92,7 +93,7 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
     const modifiers: RolledModifier[] = []
 
     for (let m = 0; m < modCount; m++) {
-      const mod = rollModifier(usedGroups, map.tier, isRing)
+      const mod = rollModifier(usedGroups, map.tier, template.slot)
       if (mod) {
         modifiers.push(mod)
         usedGroups.add(mod.group)
@@ -126,7 +127,7 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
         ...base,
         slot: 'ring',
       } as RingItem)
-    } else {
+    } else if (template.slot === 'helmet' || template.slot === 'bodyArmor' || template.slot === 'gloves' || template.slot === 'boots') {
       items.push({
         ...base,
         slot: template.slot,

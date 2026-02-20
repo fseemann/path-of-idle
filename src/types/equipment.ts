@@ -5,6 +5,7 @@ export type EquipmentSlot =
   | 'helmet'
   | 'bodyArmor'
   | 'weapon'
+  | 'gloves'
   | 'boots'
   | 'leftRing'
   | 'rightRing'
@@ -19,6 +20,7 @@ export const MAX_MODIFIERS_BY_SLOT: Record<ItemSlot, number> = {
   helmet: 4,
   bodyArmor: 4,
   weapon: 4,
+  gloves: 4,
   boots: 4,
   leftRing: 4,
   rightRing: 4,
@@ -39,7 +41,7 @@ interface BaseItem {
 }
 
 export interface ArmorItem extends BaseItem {
-  slot: 'helmet' | 'bodyArmor' | 'boots'
+  slot: 'helmet' | 'bodyArmor' | 'gloves' | 'boots'
   baseDefense: number
 }
 

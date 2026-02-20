@@ -28,6 +28,10 @@ export const BASE_ITEM_TEMPLATES: BaseItemTemplate[] = [
   { id: 'leather-shoes',   slot: 'boots',     name: 'Leather Shoes',   tierMin: 1, tierMax: 2, baseDefense: 5,           levelRequirement: 1  },
   { id: 'iron-greaves',    slot: 'boots',     name: 'Iron Greaves',    tierMin: 2, tierMax: 4, baseDefense: 15,          levelRequirement: 5  },
   { id: 'steel-sabatons',  slot: 'boots',     name: 'Steel Sabatons',  tierMin: 4, tierMax: 5, baseDefense: 28,          levelRequirement: 20 },
+  // Gloves
+  { id: 'cloth-gloves',    slot: 'gloves',    name: 'Cloth Gloves',    tierMin: 1, tierMax: 2, baseDefense: 3,           levelRequirement: 1  },
+  { id: 'leather-mitts',   slot: 'gloves',    name: 'Leather Mitts',   tierMin: 2, tierMax: 4, baseDefense: 9,           levelRequirement: 5  },
+  { id: 'steel-gauntlets', slot: 'gloves',    name: 'Steel Gauntlets', tierMin: 4, tierMax: 5, baseDefense: 17,          levelRequirement: 20 },
   // Rings (no base stats, all value in modifiers)
   { id: 'copper-ring',     slot: 'ring',      name: 'Copper Ring',     tierMin: 1, tierMax: 2, levelRequirement: 1  },
   { id: 'silver-ring',     slot: 'ring',      name: 'Silver Ring',     tierMin: 2, tierMax: 3, levelRequirement: 5  },

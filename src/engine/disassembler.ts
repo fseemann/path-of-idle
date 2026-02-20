@@ -35,7 +35,6 @@ export function applyExalt(item: EquipmentItem): EquipmentItem | null {
   const max = MAX_MODIFIERS_BY_SLOT[item.slot]
   if (item.modifiers.length >= max) return null
 
-  const isRing = item.slot === 'ring'
   const itemTier = item.itemTier ?? 1
 
   const usedGroups = new Set<ModifierGroup>(item.modifiers.map((m) => m.group))
@@ -43,7 +42,7 @@ export function applyExalt(item: EquipmentItem): EquipmentItem | null {
     (m) =>
       !usedGroups.has(m.group) &&
       (m.minItemTier ?? 1) <= itemTier &&
-      (!m.ringOnly || isRing),
+      (!m.allowedSlots || m.allowedSlots.includes(item.slot)),
   )
   if (eligible.length === 0) return null
 

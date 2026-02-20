@@ -18,7 +18,7 @@ export function calculateStats(character: Character): ComputedStats {
       const weapon = item as WeaponItem
       attackDamage += (weapon.baseAttackDamage[0] + weapon.baseAttackDamage[1]) / 2
     }
-    if (item.slot === 'helmet' || item.slot === 'bodyArmor' || item.slot === 'boots') {
+    if (item.slot === 'helmet' || item.slot === 'bodyArmor' || item.slot === 'gloves' || item.slot === 'boots') {
       defense += (item as ArmorItem).baseDefense
     }
   }
