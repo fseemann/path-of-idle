@@ -46,8 +46,11 @@ export function calculateSkillDamage(
       break
   }
 
+  // Average crit multiplier: non-crits deal 1×, crits deal (critMultiplier/100)×
+  const avgCritFactor = 1 + (computedStats.critChance / 100) * (computedStats.critMultiplier / 100 - 1)
+
   // Calculate final damage
-  const scaledDamage = (baseDamage + attributeBonus) * (1 + increasedDamage / 100)
+  const scaledDamage = (baseDamage + attributeBonus) * (1 + increasedDamage / 100) * avgCritFactor
 
   return Math.round(scaledDamage)
 }
