@@ -5,9 +5,8 @@ import { GAME_MAPS } from '@/data/maps'
 import { generateLoot } from '@/engine/lootGenerator'
 import { calculateStats } from '@/engine/statCalculator'
 import { simulateCombat } from '@/engine/combatSimulator'
-import { initializeSkillState, tickSkills, getEquippedSkills } from '@/engine/skillExecutor'
+import { initializeSkillState, tickSkills } from '@/engine/skillExecutor'
 import { calculateReservedMana, regenerateMana, calculateManaRegenRate } from '@/engine/manaCalculator'
-import { skillDefinitions } from '@/data/skillDefinitions'
 import { useCharactersStore } from './characters'
 import { useInventoryStore } from './inventory'
 import { useSkillsStore } from './skills'
@@ -90,9 +89,9 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
 
     // Initialize skill state
     const equippedSkills = character
-      ? getEquippedSkills(character.skills, skillDefinitions)
+      ? useCharactersStore().getEquippedSkills(character.id)
       : []
-    const { cooldowns, activeBuffs } = initializeSkillState(equippedSkills, now)
+    const { cooldowns, activeBuffs } = initializeSkillState(equippedSkills)
 
     // Calculate initial mana
     const stats = character ? calculateStats(character) : { maxMana: 30 } as any
@@ -133,7 +132,7 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
 
     if (map && character) {
       const stats = calculateStats(character)
-      const equippedSkills = getEquippedSkills(character.skills, skillDefinitions)
+      const equippedSkills = charactersStore.getEquippedSkills(character.id)
       const { survivalRatio } = simulateCombat(map, stats, character.baseStats, equippedSkills)
       run.survivalRatio = survivalRatio
 
@@ -171,7 +170,7 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
       // Get character and skills
       const character = useCharactersStore().getCharacter(run.characterId)
       if (character) {
-        const equippedSkills = getEquippedSkills(character.skills, skillDefinitions)
+        const equippedSkills = useCharactersStore().getEquippedSkills(character.id)
         const stats = calculateStats(character)
 
         // Tick skills if we have skill state

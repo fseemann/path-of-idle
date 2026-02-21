@@ -1,6 +1,6 @@
 <template>
-  <div class="skill-slot" :class="{ empty: !skillId }">
-    <div v-if="skillId && skillDef" class="skill-content">
+  <div class="skill-slot" :class="{ empty: !gemId }">
+    <div v-if="gemId && skillDef" class="skill-content">
       <div class="skill-name">{{ skillDef.name }}</div>
       <div class="skill-info">
         <span v-if="skillDef.type === 'active'" class="skill-cost">{{ skillDef.manaCost }} mana</span>
@@ -19,11 +19,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { SkillSlot } from '@/types'
+import { useSkillsStore } from '@/stores/skills'
 import { getSkillDefinition } from '@/data/skillDefinitions'
 
 const props = defineProps<{
   slot: SkillSlot
-  skillId?: string
+  gemId?: string
 }>()
 
 const emit = defineEmits<{
@@ -31,8 +32,13 @@ const emit = defineEmits<{
   unequip: []
 }>()
 
+const skillsStore = useSkillsStore()
+
 const skillDef = computed(() => {
-  return props.skillId ? getSkillDefinition(props.skillId) : null
+  if (!props.gemId) return null
+  const gem = skillsStore.getSkillGem(props.gemId)
+  if (!gem) return null
+  return getSkillDefinition(gem.skillId)
 })
 
 const slotLabel = computed(() => {

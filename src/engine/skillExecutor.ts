@@ -5,8 +5,7 @@ import type { SkillDefinition, SkillCooldownState, ActiveBuff, ComputedStats } f
  * Sets all active skills on cooldown 0 and applies aura buffs.
  */
 export function initializeSkillState(
-  skills: SkillDefinition[],
-  currentTime: number
+  skills: SkillDefinition[]
 ): {
   cooldowns: SkillCooldownState[]
   activeBuffs: ActiveBuff[]
@@ -153,17 +152,3 @@ export function applySkillBuffs(baseStats: ComputedStats, buffs: ActiveBuff[]): 
   return stats
 }
 
-/**
- * Get equipped skills from a character's skill slots.
- * Filters out empty slots and returns skill definitions.
- */
-export function getEquippedSkills(
-  skillSlots: Partial<Record<string, string>> | undefined,
-  skillDefinitions: SkillDefinition[]
-): SkillDefinition[] {
-  if (!skillSlots) return []
-  const skillIds = Object.values(skillSlots).filter((id): id is string => Boolean(id))
-  return skillIds
-    .map((id) => skillDefinitions.find((def) => def.id === id))
-    .filter((skill): skill is SkillDefinition => Boolean(skill))
-}

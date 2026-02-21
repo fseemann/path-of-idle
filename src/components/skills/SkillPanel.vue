@@ -9,7 +9,7 @@
           v-for="slot in activeSlots"
           :key="slot"
           :slot="slot"
-          :skillId="equippedSkills[slot]"
+          :gemId="equippedSkills[slot]"
           @equip="openPicker(slot)"
           @unequip="onUnequip(slot)"
         />
@@ -23,7 +23,7 @@
           v-for="slot in passiveSlots"
           :key="slot"
           :slot="slot"
-          :skillId="equippedSkills[slot]"
+          :gemId="equippedSkills[slot]"
           @equip="openPicker(slot)"
           @unequip="onUnequip(slot)"
         />
@@ -33,8 +33,8 @@
     <SkillGemPicker
       v-if="pickerSlot"
       :slot="pickerSlot"
-      :currentSkillId="equippedSkills[pickerSlot]"
-      @select="(skillId) => onEquip(pickerSlot!, skillId)"
+      :currentGemId="equippedSkills[pickerSlot]"
+      @select="(gemId) => onEquip(pickerSlot!, gemId)"
       @close="pickerSlot = null"
     />
   </div>
@@ -51,7 +51,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  equipSkill: [slot: SkillSlotType, skillId: string]
+  equipSkill: [slot: SkillSlotType, gemId: string]
   unequipSkill: [slot: SkillSlotType]
 }>()
 
@@ -64,8 +64,8 @@ function openPicker(slot: SkillSlotType) {
   pickerSlot.value = slot
 }
 
-function onEquip(slot: SkillSlotType, skillId: string) {
-  emit('equipSkill', slot, skillId)
+function onEquip(slot: SkillSlotType, gemId: string) {
+  emit('equipSkill', slot, gemId)
   pickerSlot.value = null
 }
 
@@ -90,32 +90,6 @@ function onUnequip(slot: SkillSlotType) {
 .slots {
   display: flex;
   gap: 8px;
-}
-
-.skill-gems-inventory {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.gems-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.gem-item {
-  padding: 8px;
-  background: #2a2a2a;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.gem-item:hover {
-  background: #3a3a3a;
 }
 
 h3 {

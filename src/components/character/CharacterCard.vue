@@ -55,8 +55,8 @@ function onSelect() {
   charactersStore.selectCharacter(props.character.id)
 }
 
-function onEquipSkill(slot: SkillSlot, skillId: string) {
-  charactersStore.equipSkill(props.character.id, slot, skillId)
+function onEquipSkill(slot: SkillSlot, gemId: string) {
+  charactersStore.equipSkill(props.character.id, slot, gemId)
 }
 
 function onUnequipSkill(slot: SkillSlot) {

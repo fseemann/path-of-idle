@@ -36,7 +36,33 @@
     </div>
 
     <!-- Skill Gems -->
-    <SkillGemDebug />
+    <div class="gems-section">
+      <div class="gems-header">
+        <span class="section-title">Skill Gems ({{ unequippedGems.length }})</span>
+        <button
+          v-if="unequippedGems.length > 0"
+          class="bulk-btn bulk-gems"
+          @click="disassembleAllGems"
+        >Disassemble All ({{ unequippedGems.length }})</button>
+      </div>
+      <div v-if="unequippedGems.length === 0" class="gems-empty">
+        No unequipped gems. Run maps to find skill gems!
+      </div>
+      <div v-else class="gems-grid">
+        <SkillGemCard
+          v-for="gem in unequippedGems"
+          :key="gem.id"
+          :gem="gem"
+          @open="openGem"
+        />
+      </div>
+    </div>
+
+    <SkillGemModal
+      v-if="gemTarget"
+      :gem="gemTarget"
+      @close="gemTarget = null"
+    />
 
     <!-- Bulk Disassemble -->
     <div v-if="inventoryStore.items.length > 0" class="bulk-actions">
@@ -84,19 +110,35 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { EquipmentItem, ItemRarity } from '@/types'
-import SkillGemDebug from '../debug/SkillGemDebug.vue'
+import type { EquipmentItem, ItemRarity, SkillGem } from '@/types'
 import { useInventoryStore, useCurrencyStore, SHARDS_PER_CURRENCY } from '@/stores'
+import { useSkillsStore } from '@/stores/skills'
 import ItemCard from './ItemCard.vue'
 import EquipItemModal from './EquipItemModal.vue'
+import SkillGemCard from './SkillGemCard.vue'
+import SkillGemModal from './SkillGemModal.vue'
 
 const inventoryStore = useInventoryStore()
 const currencyStore = useCurrencyStore()
+const skillsStore = useSkillsStore()
 
 const equipTarget = ref<EquipmentItem | null>(null)
+const gemTarget = ref<SkillGem | null>(null)
+
+const unequippedGems = computed(() => skillsStore.getUnequippedGems())
 
 function openEquip(item: EquipmentItem) {
   equipTarget.value = item
+}
+
+function openGem(gem: SkillGem) {
+  gemTarget.value = gem
+}
+
+function disassembleAllGems() {
+  for (const gem of unequippedGems.value.slice()) {
+    skillsStore.disassembleGem(gem.id)
+  }
 }
 
 const normalCount = computed(() => inventoryStore.items.filter((i) => i.rarity === 'normal' && !i.locked).length)
@@ -217,6 +259,50 @@ function disassembleAllRarity(rarity: ItemRarity) {
   width: 70px;
   flex-shrink: 0;
   text-align: right;
+}
+
+/* Skill Gems */
+.gems-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.gems-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-dim);
+}
+
+.gems-empty {
+  font-size: 13px;
+  color: var(--color-text-dim);
+  font-style: italic;
+  padding: var(--spacing-sm) 0;
+}
+
+.gems-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--spacing-sm);
+  align-content: start;
+}
+
+.bulk-gems {
+  color: #9ab8d8;
+}
+
+.bulk-gems:hover {
+  border-color: #9ab8d8;
+  color: #9ab8d8;
 }
 
 /* Bulk actions */

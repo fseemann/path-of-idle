@@ -59,7 +59,7 @@ describe('Skill System', () => {
       skillDefinitions.find(s => s.id === 'clarity')!,
     ]
 
-    const { cooldowns, activeBuffs } = initializeSkillState(equippedSkills, Date.now())
+    const { cooldowns, activeBuffs } = initializeSkillState(equippedSkills)
 
     // Should have 1 cooldown (fireball)
     expect(cooldowns.length).toBe(1)
@@ -76,7 +76,7 @@ describe('Skill System', () => {
       skillDefinitions.find(s => s.id === 'fireball')!,
     ]
 
-    const { cooldowns, activeBuffs } = initializeSkillState(equippedSkills, Date.now())
+    const { cooldowns, activeBuffs } = initializeSkillState(equippedSkills)
     const currentMana = 90
 
     // Tick once (skills should cast)

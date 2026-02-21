@@ -17,7 +17,7 @@
             v-for="gem in availableGems"
             :key="gem.id"
             class="gem-option"
-            @click="selectGem(gem.skillId)"
+            @click="selectGem(gem.id)"
           >
             <div class="gem-header">
               <span class="gem-name">{{ getSkillDef(gem.skillId)?.name }}</span>
@@ -58,12 +58,12 @@ import { getSkillDefinition } from '@/data/skillDefinitions'
 
 const props = defineProps<{
   slot: SkillSlotType
-  currentSkillId?: string
+  currentGemId?: string
 }>()
 
 const emit = defineEmits<{
   close: []
-  select: [skillId: string]
+  select: [gemId: string]
 }>()
 
 const skillsStore = useSkillsStore()
@@ -78,10 +78,9 @@ const slotLabel = computed(() => {
 })
 
 const availableGems = computed(() => {
-  return skillsStore.skillGems.filter(gem => {
+  return skillsStore.getUnequippedGems().filter(gem => {
     const skillDef = getSkillDefinition(gem.skillId)
     if (!skillDef) return false
-    // Filter by slot type (active/passive)
     return skillDef.type === slotType.value
   })
 })
@@ -105,8 +104,8 @@ function getScalingLabel(skillId: string) {
   return attr.charAt(0).toUpperCase() + attr.slice(1)
 }
 
-function selectGem(skillId: string) {
-  emit('select', skillId)
+function selectGem(gemId: string) {
+  emit('select', gemId)
   emit('close')
 }
 </script>

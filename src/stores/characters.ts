@@ -5,6 +5,9 @@ import { calculateStats } from '@/engine/statCalculator'
 import { xpRequiredForLevel } from '@/engine/xpCalculator'
 import { getInitialCharacters } from '@/data/characters'
 import { skillDefinitions } from '@/data/skillDefinitions'
+import { useSkillsStore } from './skills'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const STORAGE_KEY = 'poi-characters'
 
@@ -17,10 +20,18 @@ export const useCharactersStore = defineStore('characters', () => {
   if (saved) {
     try {
       characters.value = JSON.parse(saved) as Character[]
-      // Migrate old characters to have skills field
+      // Migrate old characters to have skills field and strip legacy skillId values
       for (const char of characters.value) {
         if (!char.skills) {
           char.skills = {}
+        } else {
+          // Skills now store gemIds (UUIDs). Clear any slot that still has a plain skillId.
+          for (const slot of Object.keys(char.skills) as SkillSlot[]) {
+            const val = char.skills[slot]
+            if (val && !UUID_RE.test(val)) {
+              delete char.skills[slot]
+            }
+          }
         }
       }
     } catch {
@@ -86,29 +97,34 @@ export const useCharactersStore = defineStore('characters', () => {
     }
   }
 
-  // Skill management
-  function equipSkill(characterId: string, slot: SkillSlot, skillId: string): string | null {
+  // Skill management — character.skills maps SkillSlot → gemId (UUID)
+  function equipSkill(characterId: string, slot: SkillSlot, gemId: string): string | null {
     const char = getCharacter(characterId)
     if (!char) return null
     const displaced = char.skills[slot] ?? null
-    char.skills[slot] = skillId
+    char.skills[slot] = gemId
     return displaced
   }
 
   function unequipSkill(characterId: string, slot: SkillSlot): string | null {
     const char = getCharacter(characterId)
     if (!char) return null
-    const skillId = char.skills[slot] ?? null
-    if (skillId) delete char.skills[slot]
-    return skillId
+    const gemId = char.skills[slot] ?? null
+    if (gemId) delete char.skills[slot]
+    return gemId
   }
 
   function getEquippedSkills(characterId: string): SkillDefinition[] {
     const char = getCharacter(characterId)
     if (!char) return []
-    const skillIds = Object.values(char.skills).filter((id): id is string => Boolean(id))
-    return skillIds
-      .map((id) => skillDefinitions.find((def) => def.id === id))
+    const skillsStore = useSkillsStore()
+    const gemIds = Object.values(char.skills).filter((id): id is string => Boolean(id))
+    return gemIds
+      .map((gemId) => {
+        const gem = skillsStore.getSkillGem(gemId)
+        if (!gem) return null
+        return skillDefinitions.find((def) => def.id === gem.skillId) ?? null
+      })
       .filter((skill): skill is SkillDefinition => Boolean(skill))
   }
 
