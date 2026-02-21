@@ -14,6 +14,7 @@ export function getInitialCharacters(): Character[] {
       experienceToNextLevel: xpRequiredForLevel(1),
       baseStats: { strength: 14, dexterity: 14, intelligence: 8 },
       equipment: {},
+      skills: {},
     },
     {
       id: crypto.randomUUID(),
@@ -23,6 +24,7 @@ export function getInitialCharacters(): Character[] {
       experienceToNextLevel: xpRequiredForLevel(1),
       baseStats: { strength: 6, dexterity: 10, intelligence: 20 },
       equipment: {},
+      skills: {},
     },
     {
       id: crypto.randomUUID(),
@@ -32,6 +34,7 @@ export function getInitialCharacters(): Character[] {
       experienceToNextLevel: xpRequiredForLevel(1),
       baseStats: { strength: 8, dexterity: 22, intelligence: 6 },
       equipment: {},
+      skills: {},
     },
   ]
 }

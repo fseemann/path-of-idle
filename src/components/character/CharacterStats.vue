@@ -19,7 +19,7 @@
         <h4>Defense</h4>
         <StatRow label="Armour"  :value="String(stats.defense)"  tip="Reduces incoming physical damage. Sum of equipment base defense plus 1 per 5 Strength, then scaled by % increased Armour modifiers." @tip="onTip" />
         <StatRow label="Life"    :value="String(stats.health)"   tip="Maximum life. Base 50 + 5 per Strength point. Increased by flat Maximum Life modifiers." @tip="onTip" />
-        <StatRow label="Mana"    :value="String(stats.mana)"     tip="Maximum mana. Base 30 + 3 per Intelligence point. Increased by flat Maximum Mana modifiers." @tip="onTip" />
+        <StatRow label="Mana"    :value="String(stats.maxMana)"     tip="Maximum mana. Base 30 + 3 per Intelligence point. Increased by flat Maximum Mana modifiers." @tip="onTip" />
       </section>
 
       <section class="stat-section">

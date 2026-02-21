@@ -1,12 +1,30 @@
-import type { GameMap, ComputedStats, DamageProfile } from '@/types'
+import type { GameMap, ComputedStats, DamageProfile, SkillDefinition, BaseStats } from '@/types'
+import { calculateTotalSkillDamage, calculateClearSpeedMultiplier } from './offensiveCombat'
 
 export interface CombatResult {
   survivalRatio: number
   totalDamageTaken: number
+  clearSpeedMultiplier: number
+  totalDamageDealt: number
 }
 
-export function simulateCombat(map: GameMap, stats: ComputedStats): CombatResult {
+export function simulateCombat(
+  map: GameMap,
+  stats: ComputedStats,
+  baseStats: BaseStats,
+  equippedSkills: SkillDefinition[] = []
+): CombatResult {
   const { enemyDps, damageProfile, durationSeconds } = map
+
+  // Calculate offensive damage output
+  const skillDamageResults = calculateTotalSkillDamage(
+    equippedSkills,
+    baseStats,
+    stats,
+    durationSeconds
+  )
+  const totalDamageDealt = skillDamageResults.reduce((sum, r) => sum + r.totalDamage, 0)
+  const clearSpeedMultiplier = calculateClearSpeedMultiplier(totalDamageDealt)
 
   // Physical mitigation: armor formula, capped at 75%
   const physMitigation = Math.min(0.75, stats.defense / (stats.defense + 200))
@@ -33,10 +51,19 @@ export function simulateCombat(map: GameMap, stats: ComputedStats): CombatResult
     totalDamageTaken += typeDps * (1 - mitigations[type]) * durationSeconds
   }
 
-  if (totalDamageTaken <= 0) return { survivalRatio: 1, totalDamageTaken: 0 }
+  if (totalDamageTaken <= 0) {
+    return {
+      survivalRatio: 1,
+      totalDamageTaken: 0,
+      clearSpeedMultiplier,
+      totalDamageDealt,
+    }
+  }
 
   return {
     survivalRatio: Math.min(1, stats.health / totalDamageTaken),
     totalDamageTaken,
+    clearSpeedMultiplier,
+    totalDamageDealt,
   }
 }

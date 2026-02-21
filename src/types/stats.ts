@@ -14,5 +14,18 @@ export interface ComputedStats {
   lightningResistance: number
   chaosResistance: number
   health: number
-  mana: number
+
+  // Mana system
+  maxMana: number
+  manaRegenFlat: number
+  manaRegenPercent: number
+
+  // Offensive stats
+  spellDamage: number
+  critChance: number
+  critMultiplier: number
+
+  // Skill effectiveness
+  auraEffect: number
+  cooldownRecovery: number
 }

@@ -22,16 +22,23 @@
       <CharacterStats :character="character" />
       <hr class="divider" />
       <EquipmentSlots :character="character" />
+      <hr class="divider" />
+      <SkillPanel
+        :equippedSkills="character.skills"
+        @equipSkill="onEquipSkill"
+        @unequipSkill="onUnequipSkill"
+      />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Character } from '@/types'
+import type { Character, SkillSlot } from '@/types'
 import { useCharactersStore, useMapRunsStore } from '@/stores'
 import CharacterStats from './CharacterStats.vue'
 import EquipmentSlots from './EquipmentSlots.vue'
+import SkillPanel from '../skills/SkillPanel.vue'
 
 const props = defineProps<{ character: Character }>()
 
@@ -46,6 +53,14 @@ const xpPercent = computed(() =>
 
 function onSelect() {
   charactersStore.selectCharacter(props.character.id)
+}
+
+function onEquipSkill(slot: SkillSlot, skillId: string) {
+  charactersStore.equipSkill(props.character.id, slot, skillId)
+}
+
+function onUnequipSkill(slot: SkillSlot) {
+  charactersStore.unequipSkill(props.character.id, slot)
 }
 </script>
 

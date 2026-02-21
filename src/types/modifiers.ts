@@ -14,6 +14,17 @@ export enum ModifierGroup {
   AddedStrength = 'AddedStrength',
   AddedDexterity = 'AddedDexterity',
   AddedIntelligence = 'AddedIntelligence',
+  // Skill system modifiers
+  IncreasedSpellDamage = 'IncreasedSpellDamage',
+  IncreasedFireDamage = 'IncreasedFireDamage',
+  IncreasedColdDamage = 'IncreasedColdDamage',
+  IncreasedLightningDamage = 'IncreasedLightningDamage',
+  IncreasedManaRegeneration = 'IncreasedManaRegeneration',
+  ReducedManaReservation = 'ReducedManaReservation',
+  IncreasedAuraEffect = 'IncreasedAuraEffect',
+  IncreasedCooldownRecovery = 'IncreasedCooldownRecovery',
+  IncreasedCriticalStrikeChance = 'IncreasedCriticalStrikeChance',
+  IncreasedCriticalStrikeMultiplier = 'IncreasedCriticalStrikeMultiplier',
   // Slot-specific modifier groups
   IncreasedAttackSpeed_Gloves = 'IncreasedAttackSpeed_Gloves',
   AddedDexterity_Gloves = 'AddedDexterity_Gloves',

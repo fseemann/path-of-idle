@@ -35,6 +35,9 @@
       </div>
     </div>
 
+    <!-- Skill Gems -->
+    <SkillGemDebug />
+
     <!-- Bulk Disassemble -->
     <div v-if="inventoryStore.items.length > 0" class="bulk-actions">
       <span class="bulk-label">Disassemble all:</span>
@@ -82,6 +85,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { EquipmentItem, ItemRarity } from '@/types'
+import SkillGemDebug from '../debug/SkillGemDebug.vue'
 import { useInventoryStore, useCurrencyStore, SHARDS_PER_CURRENCY } from '@/stores'
 import ItemCard from './ItemCard.vue'
 import EquipItemModal from './EquipItemModal.vue'

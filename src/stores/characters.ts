@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import type { Character, EquipmentSlot, EquipmentItem } from '@/types'
+import type { Character, EquipmentSlot, EquipmentItem, SkillSlot, SkillDefinition } from '@/types'
 import { calculateStats } from '@/engine/statCalculator'
 import { xpRequiredForLevel } from '@/engine/xpCalculator'
 import { getInitialCharacters } from '@/data/characters'
+import { skillDefinitions } from '@/data/skillDefinitions'
 
 const STORAGE_KEY = 'poi-characters'
 
@@ -16,6 +17,12 @@ export const useCharactersStore = defineStore('characters', () => {
   if (saved) {
     try {
       characters.value = JSON.parse(saved) as Character[]
+      // Migrate old characters to have skills field
+      for (const char of characters.value) {
+        if (!char.skills) {
+          char.skills = {}
+        }
+      }
     } catch {
       characters.value = getInitialCharacters()
     }
@@ -79,6 +86,32 @@ export const useCharactersStore = defineStore('characters', () => {
     }
   }
 
+  // Skill management
+  function equipSkill(characterId: string, slot: SkillSlot, skillId: string): string | null {
+    const char = getCharacter(characterId)
+    if (!char) return null
+    const displaced = char.skills[slot] ?? null
+    char.skills[slot] = skillId
+    return displaced
+  }
+
+  function unequipSkill(characterId: string, slot: SkillSlot): string | null {
+    const char = getCharacter(characterId)
+    if (!char) return null
+    const skillId = char.skills[slot] ?? null
+    if (skillId) delete char.skills[slot]
+    return skillId
+  }
+
+  function getEquippedSkills(characterId: string): SkillDefinition[] {
+    const char = getCharacter(characterId)
+    if (!char) return []
+    const skillIds = Object.values(char.skills).filter((id): id is string => Boolean(id))
+    return skillIds
+      .map((id) => skillDefinitions.find((def) => def.id === id))
+      .filter((skill): skill is SkillDefinition => Boolean(skill))
+  }
+
   return {
     characters,
     selectedCharacterId,
@@ -89,5 +122,8 @@ export const useCharactersStore = defineStore('characters', () => {
     equipItem,
     unequipItem,
     awardXp,
+    equipSkill,
+    unequipSkill,
+    getEquippedSkills,
   }
 })

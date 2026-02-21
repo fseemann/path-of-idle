@@ -9,10 +9,12 @@ import type {
   RingItem,
   ItemRarity,
   ItemSlot,
+  SkillGem,
 } from '@/types'
 import { ModifierGroup, MAX_MODIFIERS_BY_SLOT } from '@/types'
 import { MODIFIER_POOL } from '@/data/modifierPool'
 import { BASE_ITEM_TEMPLATES } from '@/data/baseItems'
+import { getSkillDefinitionsByTier } from '@/data/skillDefinitions'
 import { calculateStats } from '@/engine/statCalculator'
 
 function weightedRandom<T extends { weight: number }>(pool: T[]): T | null {
@@ -67,6 +69,7 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
   const rawCount = Math.round(map.lootMultiplier * (0.5 + Math.random())) + bonusItems
   const itemCount = Math.max(1, Math.round(rawCount * survivalRatio))
   const items: EquipmentItem[] = []
+  const skillGems: SkillGem[] = []
 
   const eligibleTemplates = BASE_ITEM_TEMPLATES.filter(
     (t) => t.tierMin <= map.tier && t.tierMax >= map.tier
@@ -76,6 +79,7 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
       runId: '',
       characterId: character.id,
       items: [],
+      skillGems: [],
       xpAwarded: Math.round(map.xpReward * survivalRatio * (0.9 + Math.random() * 0.2)),
       generatedAt: Date.now(),
     }
@@ -136,10 +140,25 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
     }
   }
 
+  // Skill gem drops (15% chance per run)
+  if (Math.random() < 0.15) {
+    const tierSkills = getSkillDefinitionsByTier(map.tier)
+    // Filter by level requirement
+    const eligible = tierSkills.filter((skill) => skill.levelRequirement <= character.level)
+    if (eligible.length > 0) {
+      const skill = eligible[Math.floor(Math.random() * eligible.length)]!
+      skillGems.push({
+        id: crypto.randomUUID(),
+        skillId: skill.id,
+      })
+    }
+  }
+
   return {
     runId: '',
     characterId: character.id,
     items,
+    skillGems,
     xpAwarded: Math.round(map.xpReward * survivalRatio * (0.9 + Math.random() * 0.2)),
     generatedAt: Date.now(),
   }

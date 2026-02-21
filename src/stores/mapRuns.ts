@@ -5,8 +5,12 @@ import { GAME_MAPS } from '@/data/maps'
 import { generateLoot } from '@/engine/lootGenerator'
 import { calculateStats } from '@/engine/statCalculator'
 import { simulateCombat } from '@/engine/combatSimulator'
+import { initializeSkillState, tickSkills, getEquippedSkills } from '@/engine/skillExecutor'
+import { calculateReservedMana, regenerateMana, calculateManaRegenRate } from '@/engine/manaCalculator'
+import { skillDefinitions } from '@/data/skillDefinitions'
 import { useCharactersStore } from './characters'
 import { useInventoryStore } from './inventory'
+import { useSkillsStore } from './skills'
 
 const STORAGE_KEY = 'poi-mapruns'
 
@@ -82,15 +86,32 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
     }
 
     const runId = crypto.randomUUID()
+    const now = Date.now()
+
+    // Initialize skill state
+    const equippedSkills = character
+      ? getEquippedSkills(character.skills, skillDefinitions)
+      : []
+    const { cooldowns, activeBuffs } = initializeSkillState(equippedSkills, now)
+
+    // Calculate initial mana
+    const stats = character ? calculateStats(character) : { maxMana: 30 } as any
+    const passiveSkills = equippedSkills.filter((s) => s.type === 'passive')
+    const reservedMana = calculateReservedMana(stats.maxMana, passiveSkills)
+    const availableMana = stats.maxMana - reservedMana
+
     runs.value.push({
       id: runId,
       mapId,
       characterId,
-      startedAt: Date.now(),
+      startedAt: now,
       durationMs,
       completedAt: null,
       lootCollected: false,
       autoRerun,
+      skillCooldowns: cooldowns,
+      activeBuffs,
+      currentMana: availableMana,
     })
     return runId
   }
@@ -112,12 +133,20 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
 
     if (map && character) {
       const stats = calculateStats(character)
-      const { survivalRatio } = simulateCombat(map, stats)
+      const equippedSkills = getEquippedSkills(character.skills, skillDefinitions)
+      const { survivalRatio } = simulateCombat(map, stats, character.baseStats, equippedSkills)
       run.survivalRatio = survivalRatio
 
       const loot = generateLoot(map, character, survivalRatio)
       loot.runId = run.id
       inventoryStore.addItems(loot.items)
+
+      // Add skill gems to skills store
+      const skillsStore = useSkillsStore()
+      if (loot.skillGems.length > 0) {
+        skillsStore.addSkillGems(loot.skillGems)
+      }
+
       charactersStore.awardXp(run.characterId, loot.xpAwarded)
     }
 
@@ -134,8 +163,48 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
   function tick() {
     const now = Date.now()
     currentTime.value = now // triggers reactivity for getProgress computed
+    const deltaSeconds = 1 // tick runs every 1 second
+
     for (const run of runs.value) {
       if (run.completedAt !== null) continue
+
+      // Get character and skills
+      const character = useCharactersStore().getCharacter(run.characterId)
+      if (character) {
+        const equippedSkills = getEquippedSkills(character.skills, skillDefinitions)
+        const stats = calculateStats(character)
+
+        // Tick skills if we have skill state
+        if (run.skillCooldowns && run.activeBuffs && run.currentMana !== undefined) {
+          const result = tickSkills(
+            equippedSkills,
+            run.skillCooldowns,
+            run.activeBuffs,
+            run.currentMana,
+            now,
+            deltaSeconds
+          )
+
+          run.skillCooldowns = result.cooldowns
+          run.activeBuffs = result.activeBuffs
+          run.currentMana -= result.manaConsumed
+
+          // Regenerate mana
+          const passiveSkills = equippedSkills.filter((s) => s.type === 'passive')
+          const reservedMana = calculateReservedMana(stats.maxMana, passiveSkills)
+          const regenRate = calculateManaRegenRate(stats)
+
+          run.currentMana = regenerateMana(
+            run.currentMana,
+            stats.maxMana,
+            reservedMana,
+            regenRate,
+            deltaSeconds
+          )
+        }
+      }
+
+      // Check for completion
       if (now >= run.startedAt + run.durationMs) {
         completeRun(run, now)
       }

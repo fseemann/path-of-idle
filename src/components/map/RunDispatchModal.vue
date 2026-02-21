@@ -125,7 +125,8 @@ const rarityBonusPct = computed(() => {
 const survivalPct = computed(() => {
   if (!selectedCharacter.value) return 100
   const stats = calculateStats(selectedCharacter.value)
-  const { survivalRatio } = simulateCombat(props.map, stats)
+  const equippedSkills = charactersStore.getEquippedSkills(selectedCharacter.value.id)
+  const { survivalRatio } = simulateCombat(props.map, stats, selectedCharacter.value.baseStats, equippedSkills)
   return Math.round(Math.min(1, survivalRatio) * 100)
 })
 
