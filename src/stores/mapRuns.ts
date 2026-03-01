@@ -9,15 +9,6 @@ import { useCharactersStore } from './characters'
 import { useInventoryStore } from './inventory'
 import { useSkillsStore } from './skills'
 
-export function computeRunDurationMs(
-  baseDurationSeconds: number,
-  movementSpeed: number,
-  clearSpeedMultiplier: number
-): { speedFactor: number; durationMs: number } {
-  const speedFactor = Math.max(0.5, 100 / movementSpeed)
-  return { speedFactor, durationMs: Math.round(baseDurationSeconds * 1000 * speedFactor * clearSpeedMultiplier) }
-}
-
 const STORAGE_KEY = 'poi-mapruns'
 
 export const useMapRunsStore = defineStore('mapRuns', () => {
@@ -88,8 +79,7 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
     if (character) {
       const stats = calculateStats(character)
       const equippedSkills = charactersStore.getEquippedSkills(characterId)
-      const { clearSpeedMultiplier } = simulateCombat(map, stats, character.baseStats, equippedSkills)
-      ;({ durationMs } = computeRunDurationMs(map.durationSeconds, stats.movementSpeed, clearSpeedMultiplier))
+      ;({ durationMs } = simulateCombat(map, stats, character.baseStats, equippedSkills))
     }
 
     const runId = crypto.randomUUID()

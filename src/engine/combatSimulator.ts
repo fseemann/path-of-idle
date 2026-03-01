@@ -63,7 +63,21 @@ export function computeAverageSurvivability(
   }
 }
 
-export interface CombatResult extends SurvivabilityResult {
+export interface RunDurationResult {
+  speedFactor: number
+  durationMs: number
+}
+
+export function computeRunDurationMs(
+  baseDurationSeconds: number,
+  movementSpeed: number,
+  clearSpeedMultiplier: number
+): RunDurationResult {
+  const speedFactor = Math.max(0.5, 100 / movementSpeed)
+  return { speedFactor, durationMs: Math.round(baseDurationSeconds * 1000 * speedFactor * clearSpeedMultiplier) }
+}
+
+export interface CombatResult extends SurvivabilityResult, RunDurationResult {
   survivalRatio: number
   totalDamageTaken: number
   clearSpeedMultiplier: number
@@ -87,12 +101,15 @@ export function simulateCombat(
   const surviv = computeAverageSurvivability(stats, equippedSkills, damageProfile)
   const totalRawDamage = enemyDps * durationSeconds * clearSpeedMultiplier
 
+  const duration = computeRunDurationMs(durationSeconds, stats.movementSpeed, clearSpeedMultiplier)
+
   if (totalRawDamage <= 0) {
-    return { ...surviv, survivalRatio: 1, totalDamageTaken: 0, clearSpeedMultiplier, totalDamageDealt }
+    return { ...surviv, ...duration, survivalRatio: 1, totalDamageTaken: 0, clearSpeedMultiplier, totalDamageDealt }
   }
 
   return {
     ...surviv,
+    ...duration,
     survivalRatio: Math.min(1, surviv.ehp / totalRawDamage),
     totalDamageTaken: totalRawDamage,
     clearSpeedMultiplier,

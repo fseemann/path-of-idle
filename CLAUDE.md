@@ -25,7 +25,7 @@ Three functions implement the core game mechanics. **Never reimplement or duplic
 
 - **`computeAverageSurvivability`** (`src/engine/combatSimulator.ts`) — the authoritative survivability calculation. Returns `SurvivabilityResult` with EHP and all buffed defensive stats. Called by `simulateCombat`; also usable standalone when map context is not available (e.g. character sheet, item comparison).
 
-- **`computeRunDurationMs`** (`src/stores/mapRuns.ts`) — the authoritative map run duration calculation. Combines movement speed and clear speed multiplier into a final duration. Used by both `startRun` (to set the actual run timer) and the dispatch UI (to preview duration).
+- **`simulateCombat`** also calls **`computeRunDurationMs`** internally and includes `speedFactor` and `durationMs` in its return value. Callers never need to call `computeRunDurationMs` directly — a single `simulateCombat` call provides all data needed for both running a map and displaying a preview to the player.
 
 When displaying any stat that feeds into these calculations, retrieve the value from their return types — do not recompute it with inline formulas.
 

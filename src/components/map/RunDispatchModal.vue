@@ -136,7 +136,6 @@ import type { GameMap } from '@/types'
 import { useCharactersStore, useMapRunsStore } from '@/stores'
 import { calculateStats } from '@/engine/statCalculator'
 import { simulateCombat } from '@/engine/combatSimulator'
-import { computeRunDurationMs } from '@/stores/mapRuns'
 
 const props = defineProps<{ map: GameMap }>()
 const emit = defineEmits<{ close: [] }>()
@@ -162,20 +161,15 @@ const preview = computed(() => {
   const stats = calculateStats(char)
   const equippedSkills = charactersStore.getEquippedSkills(char.id)
   const combat = simulateCombat(props.map, stats, char.baseStats, equippedSkills)
-  const { speedFactor, durationMs } = computeRunDurationMs(
-    props.map.durationSeconds,
-    stats.movementSpeed,
-    combat.clearSpeedMultiplier
-  )
 
   return {
     movementSpeed: Math.round(stats.movementSpeed),
-    speedFactor,
-    speedPct: Math.round((speedFactor - 1) * 100),
+    speedFactor: combat.speedFactor,
+    speedPct: Math.round((combat.speedFactor - 1) * 100),
     totalDps: Math.round(combat.totalDamageDealt / props.map.durationSeconds),
     clearSpeedMultiplier: combat.clearSpeedMultiplier,
     clearSpeedPct: Math.round((combat.clearSpeedMultiplier - 1) * 100),
-    effectiveDuration: Math.round(durationMs / 100) / 10,
+    effectiveDuration: Math.round(combat.durationMs / 100) / 10,
     health: combat.health,
     defense: combat.defense,
     physMitigation: combat.physMitigation,
