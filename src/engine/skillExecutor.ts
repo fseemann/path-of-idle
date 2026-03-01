@@ -131,11 +131,16 @@ export function applySkillBuffs(baseStats: ComputedStats, buffs: ActiveBuff[]): 
 
   for (const buff of buffs) {
     const target = buff.target as keyof ComputedStats | 'manaRegenFlat' | 'manaRegenPercent'
+    // Permanent auras (expiresAt === null) are scaled by the auraEffect stat
+    const effectiveValue =
+      buff.expiresAt === null
+        ? buff.value * (1 + baseStats.auraEffect / 100)
+        : buff.value
 
     if (buff.kind === 'flat') {
-      flatMods[target] = (flatMods[target] || 0) + buff.value
+      flatMods[target] = (flatMods[target] || 0) + effectiveValue
     } else if (buff.kind === 'increased') {
-      increasedMods[target] = (increasedMods[target] || 0) + buff.value
+      increasedMods[target] = (increasedMods[target] || 0) + effectiveValue
     }
   }
 

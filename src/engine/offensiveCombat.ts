@@ -1,5 +1,6 @@
 import type { SkillDefinition, ComputedStats, BaseStats } from '@/types'
 import { initializeSkillState, applySkillBuffs } from './skillExecutor'
+import { calculateReservedMana, calculateAvailableMana, calculateManaRegenRate } from './manaCalculator'
 
 export interface SkillDamageResult {
   skillId: string
@@ -58,16 +59,31 @@ export function calculateSkillDamage(
 
 /**
  * Calculate how many times a skill will be cast during a map run.
+ * Casts are limited by both cooldown and available mana (pool + regen over the run).
  */
-export function calculateCastsPerRun(skill: SkillDefinition, runDurationSeconds: number): number {
+export function calculateCastsPerRun(
+  skill: SkillDefinition,
+  runDurationSeconds: number,
+  cooldownRecovery: number = 0,
+  availableMana: number = Infinity,
+  manaRegenPerSecond: number = 0
+): number {
   if (!skill.cooldown) {
     return 0
   }
 
-  // Apply cooldown recovery modifier if needed (future enhancement)
-  const effectiveCooldown = skill.cooldown
+  const effectiveCooldown = skill.cooldown / (1 + cooldownRecovery / 100)
+  const castsByCooldown = Math.floor(runDurationSeconds / effectiveCooldown)
 
-  return Math.floor(runDurationSeconds / effectiveCooldown)
+  const manaCost = skill.manaCost || 0
+  if (manaCost <= 0) {
+    return castsByCooldown
+  }
+
+  const totalManaForRun = availableMana + manaRegenPerSecond * runDurationSeconds
+  const maxCastsByMana = Math.floor(totalManaForRun / manaCost)
+
+  return Math.min(castsByCooldown, maxCastsByMana)
 }
 
 /**
@@ -81,11 +97,22 @@ export function calculateTotalSkillDamage(
 ): SkillDamageResult[] {
   const results: SkillDamageResult[] = []
 
+  const passiveSkills = skills.filter((s) => s.type === 'passive')
+  const reservedMana = calculateReservedMana(computedStats.maxMana, passiveSkills)
+  const availableMana = calculateAvailableMana(computedStats.maxMana, reservedMana)
+  const manaRegenPerSecond = (computedStats.maxMana * calculateManaRegenRate(computedStats)) / 100
+
   const activeSkills = skills.filter((s) => s.type === 'active')
 
   for (const skill of activeSkills) {
     const baseDamage = calculateSkillDamage(skill, baseStats, computedStats)
-    const castsPerRun = calculateCastsPerRun(skill, runDurationSeconds)
+    const castsPerRun = calculateCastsPerRun(
+      skill,
+      runDurationSeconds,
+      computedStats.cooldownRecovery,
+      availableMana,
+      manaRegenPerSecond
+    )
     const totalDamage = baseDamage * castsPerRun
 
     results.push({
@@ -131,27 +158,43 @@ export function calculateEffectiveDuration(
  * Calculate overall DPS including auto-attacks and all equipped active skills.
  * Passive aura buffs are applied to stats first so they affect both auto-attacks
  * and skill scaling (e.g. Herald of Fire boosting spell damage).
+ * Mana costs are accounted for: skills that run out of mana mid-run have their
+ * effective DPS reduced proportionally.
  *
  * Auto-attack DPS = attackDamage × attackSpeed
- * Skill DPS       = Σ (damagePerCast / cooldown) for each active skill
+ * Skill DPS       = Σ (castsPerRun × damagePerCast) / runDurationSeconds
  */
 export function computeTotalDPS(
   skills: SkillDefinition[],
   baseStats: BaseStats,
-  computedStats: ComputedStats
+  computedStats: ComputedStats,
+  runDurationSeconds: number = 60
 ): number {
   // Apply passive aura buffs (e.g. Herald of Fire +30% spell damage)
   const { activeBuffs } = initializeSkillState(skills)
   const boostedStats = applySkillBuffs(computedStats, activeBuffs)
 
-  // Auto-attack
+  // Mana budget over the run
+  const passiveSkills = skills.filter((s) => s.type === 'passive')
+  const reservedMana = calculateReservedMana(boostedStats.maxMana, passiveSkills)
+  const availableMana = calculateAvailableMana(boostedStats.maxMana, reservedMana)
+  const manaRegenPerSecond = (boostedStats.maxMana * calculateManaRegenRate(boostedStats)) / 100
+
+  // Auto-attack (no mana cost)
   let total = boostedStats.attackDamage * boostedStats.attackSpeed
 
   // Active skills
   const activeSkills = skills.filter((s) => s.type === 'active' && s.cooldown && s.cooldown > 0)
   for (const skill of activeSkills) {
     const damagePerCast = calculateSkillDamage(skill, baseStats, boostedStats)
-    total += damagePerCast / skill.cooldown!
+    const castsPerRun = calculateCastsPerRun(
+      skill,
+      runDurationSeconds,
+      boostedStats.cooldownRecovery,
+      availableMana,
+      manaRegenPerSecond
+    )
+    total += (damagePerCast * castsPerRun) / runDurationSeconds
   }
 
   return Math.round(total)

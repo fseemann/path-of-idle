@@ -59,7 +59,7 @@ export function simulateCombat(
   const { enemyDps, damageProfile, durationSeconds } = map
 
   // Calculate offensive damage output — same DPS figure shown on character sheet
-  const totalDps = computeTotalDPS(equippedSkills, baseStats, stats)
+  const totalDps = computeTotalDPS(equippedSkills, baseStats, stats, durationSeconds)
   const totalDamageDealt = totalDps * durationSeconds
   const clearSpeedMultiplier = calculateClearSpeedMultiplier(totalDamageDealt)
 
