@@ -52,6 +52,35 @@
         </div>
       </div>
 
+      <!-- Stat preview -->
+      <div v-if="selectedCharId" class="stat-preview">
+        <div class="section-label">Stat Changes</div>
+        <div class="stat-preview-rows">
+          <div class="stat-preview-row">
+            <span class="stat-preview-label">Overall DPS</span>
+            <span class="stat-preview-values">
+              <span class="stat-val">{{ fmtNum(currentDPS) }}</span>
+              <span class="stat-arrow">→</span>
+              <span class="stat-val">{{ fmtNum(newDPS) }}</span>
+              <span class="stat-delta" :class="deltaCls(newDPS - currentDPS)">
+                {{ fmtDelta(newDPS - currentDPS) }}
+              </span>
+            </span>
+          </div>
+          <div class="stat-preview-row">
+            <span class="stat-preview-label">Survivability</span>
+            <span class="stat-preview-values">
+              <span class="stat-val">{{ fmtNum(currentSurv) }}</span>
+              <span class="stat-arrow">→</span>
+              <span class="stat-val">{{ fmtNum(newSurv) }}</span>
+              <span class="stat-delta" :class="deltaCls(newSurv - currentSurv)">
+                {{ fmtDelta(newSurv - currentSurv) }}
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- Crafting section -->
       <div class="craft-section">
         <div class="section-label">Crafting</div>
@@ -139,11 +168,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, toRaw } from 'vue'
 import type { EquipmentItem, EquipmentSlot, ArmorItem, WeaponItem } from '@/types'
 import { MAX_MODIFIERS_BY_SLOT } from '@/types'
 import { useCharactersStore, useInventoryStore, useCurrencyStore } from '@/stores'
 import { getDisassembleYield } from '@/engine/disassembler'
+import { calculateStats } from '@/engine/statCalculator'
+import { computeTotalDPS } from '@/engine/offensiveCombat'
+import { computeAverageSurvivability } from '@/engine/combatSimulator'
 
 const props = defineProps<{ item: EquipmentItem }>()
 const emit = defineEmits<{ close: [] }>()
@@ -186,6 +218,53 @@ const canExalt = computed(() => {
   if (currencyStore.exalts < 1) return false
   return localItem.value.modifiers.length < MAX_MODIFIERS_BY_SLOT[localItem.value.slot]
 })
+
+// Stat preview: compute current and hypothetical stats for the selected character
+const previewSkills = computed(() =>
+  selectedChar.value ? charactersStore.getEquippedSkills(selectedChar.value.id) : []
+)
+
+const currentDPS = computed(() => {
+  if (!selectedChar.value) return 0
+  const s = calculateStats(selectedChar.value)
+  return computeTotalDPS(previewSkills.value, selectedChar.value.baseStats, s)
+})
+
+const newDPS = computed(() => {
+  if (!selectedChar.value) return 0
+  const clone = JSON.parse(JSON.stringify(toRaw(selectedChar.value)))
+  clone.equipment[targetSlot.value] = JSON.parse(JSON.stringify(toRaw(localItem.value)))
+  const s = calculateStats(clone)
+  return computeTotalDPS(previewSkills.value, selectedChar.value.baseStats, s)
+})
+
+const currentSurv = computed(() => {
+  if (!selectedChar.value) return 0
+  return computeAverageSurvivability(calculateStats(selectedChar.value), previewSkills.value)
+})
+
+const newSurv = computed(() => {
+  if (!selectedChar.value) return 0
+  const clone = JSON.parse(JSON.stringify(toRaw(selectedChar.value)))
+  clone.equipment[targetSlot.value] = JSON.parse(JSON.stringify(toRaw(localItem.value)))
+  return computeAverageSurvivability(calculateStats(clone), previewSkills.value)
+})
+
+function fmtNum(n: number): string {
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n)
+}
+
+function fmtDelta(d: number): string {
+  if (d === 0) return ''
+  return (d > 0 ? '+' : '') + fmtNum(d)
+}
+
+function deltaCls(d: number): string {
+  if (d > 0) return 'delta-pos'
+  if (d < 0) return 'delta-neg'
+  return ''
+}
 
 const yieldText = computed(() => {
   const y = getDisassembleYield(localItem.value)
@@ -290,6 +369,55 @@ function onEquip() {
   color: var(--color-text-dim);
   font-style: italic;
 }
+
+/* Stat preview */
+.stat-preview {
+  margin-bottom: var(--spacing-sm);
+}
+
+.stat-preview-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.stat-preview-label {
+  color: var(--color-text-secondary);
+}
+
+.stat-preview-values {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-val {
+  color: var(--color-text-primary);
+  font-weight: 500;
+  min-width: 36px;
+  text-align: right;
+}
+
+.stat-arrow {
+  color: var(--color-text-dim);
+  font-size: 11px;
+}
+
+.stat-delta {
+  font-size: 12px;
+  min-width: 40px;
+  text-align: right;
+}
+
+.delta-pos { color: #6cbf6c; }
+.delta-neg { color: #c06060; }
 
 /* Crafting */
 .craft-section {

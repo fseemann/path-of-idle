@@ -10,6 +10,7 @@
     <template v-if="stats">
       <section class="stat-section">
         <h4>Offense</h4>
+        <StatRow label="Overall DPS"   :value="fmtNum(dps)"                               tip="Total damage per second from all equipped active skills. Factors in base damage, attribute scaling, spell/attack damage bonuses, and crit. Zero if no active skills are equipped." @tip="onTip" />
         <StatRow label="Attack Damage" :value="String(stats.attackDamage)"               tip="Average physical damage per hit. Scaled by weapon base damage, Strength modifiers, and % increased modifiers." @tip="onTip" />
         <StatRow label="Attack Speed"  :value="stats.attackSpeed.toFixed(2) + '/s'"      tip="Attacks per second. Base 1.0 + 0.002 per Dexterity, further scaled by % increased Attack Speed modifiers." @tip="onTip" />
         <StatRow label="Move Speed"    :value="stats.movementSpeed + '%'"                 tip="Movement speed relative to base (100%). Each Dexterity point adds 0.2%. Increased by movement speed modifiers." @tip="onTip" />
@@ -17,6 +18,7 @@
 
       <section class="stat-section">
         <h4>Defense</h4>
+        <StatRow label="Survivability" :value="fmtNum(survivability)"                    tip="Average Effective HP across all damage types (physical, fire, cold, lightning, chaos) weighted equally. Higher is harder to kill." @tip="onTip" />
         <StatRow label="Armour"  :value="String(stats.defense)"  tip="Reduces incoming physical damage. Sum of equipment base defense plus 1 per 5 Strength, then scaled by % increased Armour modifiers." @tip="onTip" />
         <StatRow label="Life"    :value="String(stats.health)"   tip="Maximum life. Base 50 + 5 per Strength point. Increased by flat Maximum Life modifiers." @tip="onTip" />
         <StatRow label="Mana"    :value="String(stats.maxMana)"     tip="Maximum mana. Base 30 + 3 per Intelligence point. Increased by flat Maximum Mana modifiers." @tip="onTip" />
@@ -48,11 +50,31 @@
 import { ref, computed } from 'vue'
 import type { Character } from '@/types'
 import { useCharactersStore } from '@/stores'
+import { calculateStats } from '@/engine/statCalculator'
+import { computeTotalDPS } from '@/engine/offensiveCombat'
+import { computeAverageSurvivability } from '@/engine/combatSimulator'
 import StatRow from './StatRow.vue'
 
 const props = defineProps<{ character: Character }>()
 const charactersStore = useCharactersStore()
 const stats = computed(() => charactersStore.getComputedStats(props.character.id))
+
+const equippedSkills = computed(() => charactersStore.getEquippedSkills(props.character.id))
+
+const dps = computed(() => {
+  const s = calculateStats(props.character)
+  return computeTotalDPS(equippedSkills.value, props.character.baseStats, s)
+})
+
+const survivability = computed(() => {
+  const s = calculateStats(props.character)
+  return computeAverageSurvivability(s, equippedSkills.value)
+})
+
+function fmtNum(n: number): string {
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n)
+}
 
 const activeTip = ref<string | null>(null)
 const tipX = ref(0)

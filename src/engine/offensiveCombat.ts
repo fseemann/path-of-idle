@@ -1,4 +1,5 @@
 import type { SkillDefinition, ComputedStats, BaseStats } from '@/types'
+import { initializeSkillState, applySkillBuffs } from './skillExecutor'
 
 export interface SkillDamageResult {
   skillId: string
@@ -124,4 +125,34 @@ export function calculateEffectiveDuration(
   clearSpeedMultiplier: number
 ): number {
   return baseDuration * clearSpeedMultiplier
+}
+
+/**
+ * Calculate overall DPS including auto-attacks and all equipped active skills.
+ * Passive aura buffs are applied to stats first so they affect both auto-attacks
+ * and skill scaling (e.g. Herald of Fire boosting spell damage).
+ *
+ * Auto-attack DPS = attackDamage × attackSpeed
+ * Skill DPS       = Σ (damagePerCast / cooldown) for each active skill
+ */
+export function computeTotalDPS(
+  skills: SkillDefinition[],
+  baseStats: BaseStats,
+  computedStats: ComputedStats
+): number {
+  // Apply passive aura buffs (e.g. Herald of Fire +30% spell damage)
+  const { activeBuffs } = initializeSkillState(skills)
+  const boostedStats = applySkillBuffs(computedStats, activeBuffs)
+
+  // Auto-attack
+  let total = boostedStats.attackDamage * boostedStats.attackSpeed
+
+  // Active skills
+  const activeSkills = skills.filter((s) => s.type === 'active' && s.cooldown && s.cooldown > 0)
+  for (const skill of activeSkills) {
+    const damagePerCast = calculateSkillDamage(skill, baseStats, boostedStats)
+    total += damagePerCast / skill.cooldown!
+  }
+
+  return Math.round(total)
 }

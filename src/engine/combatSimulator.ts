@@ -1,5 +1,31 @@
 import type { GameMap, ComputedStats, DamageProfile, SkillDefinition, BaseStats } from '@/types'
 import { calculateTotalSkillDamage, calculateClearSpeedMultiplier } from './offensiveCombat'
+import { initializeSkillState, applySkillBuffs } from './skillExecutor'
+
+/**
+ * Compute average Effective HP across all 5 damage types with equal weighting.
+ * Passive aura buffs (e.g. Vitality +15% health) are applied before computing
+ * so the survivability figure reflects their contribution.
+ *
+ * EHP for each type = health / (1 - mitigation)
+ */
+export function computeAverageSurvivability(
+  stats: ComputedStats,
+  skills: SkillDefinition[] = []
+): number {
+  const { activeBuffs } = initializeSkillState(skills)
+  const boostedStats = applySkillBuffs(stats, activeBuffs)
+
+  const physMit = Math.min(0.75, boostedStats.defense / (boostedStats.defense + 200))
+  const fireMit = Math.min(0.75, boostedStats.fireResistance / 100)
+  const coldMit = Math.min(0.75, boostedStats.iceResistance / 100)
+  const lightningMit = Math.min(0.75, boostedStats.lightningResistance / 100)
+  const chaosMit = Math.max(-1, boostedStats.chaosResistance / 100)
+
+  const ehp = (mit: number) => boostedStats.health / Math.max(0.01, 1 - mit)
+  const avg = (ehp(physMit) + ehp(fireMit) + ehp(coldMit) + ehp(lightningMit) + ehp(chaosMit)) / 5
+  return Math.round(avg)
+}
 
 export interface CombatResult {
   survivalRatio: number

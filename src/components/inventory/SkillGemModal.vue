@@ -70,6 +70,35 @@
         </div>
       </div>
 
+      <!-- Stat preview (shown when a character and slot are selected) -->
+      <div v-if="selectedCharId && selectedSlot" class="stat-preview">
+        <div class="section-label">Stat Changes</div>
+        <div class="stat-preview-rows">
+          <div class="stat-preview-row">
+            <span class="stat-preview-label">Overall DPS</span>
+            <span class="stat-preview-values">
+              <span class="stat-val">{{ fmtNum(currentDPS) }}</span>
+              <span class="stat-arrow">→</span>
+              <span class="stat-val">{{ fmtNum(newDPS) }}</span>
+              <span class="stat-delta" :class="deltaCls(newDPS - currentDPS)">
+                {{ fmtDelta(newDPS - currentDPS) }}
+              </span>
+            </span>
+          </div>
+          <div class="stat-preview-row">
+            <span class="stat-preview-label">Survivability</span>
+            <span class="stat-preview-values">
+              <span class="stat-val">{{ fmtNum(currentSurv) }}</span>
+              <span class="stat-arrow">→</span>
+              <span class="stat-val">{{ fmtNum(newSurv) }}</span>
+              <span class="stat-delta" :class="deltaCls(newSurv - currentSurv)">
+                {{ fmtDelta(newSurv - currentSurv) }}
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="modal-actions">
         <button @click="emit('close')">Cancel</button>
@@ -91,6 +120,9 @@ import type { SkillGem, SkillSlot } from '@/types'
 import { useCharactersStore } from '@/stores/characters'
 import { useSkillsStore } from '@/stores/skills'
 import { getSkillDefinition } from '@/data/skillDefinitions'
+import { calculateStats } from '@/engine/statCalculator'
+import { computeTotalDPS } from '@/engine/offensiveCombat'
+import { computeAverageSurvivability } from '@/engine/combatSimulator'
 
 const props = defineProps<{ gem: SkillGem }>()
 const emit = defineEmits<{ close: [] }>()
@@ -142,6 +174,64 @@ function getSlotGemName(slot: SkillSlot): string | null {
   const gem = skillsStore.getSkillGem(gemId)
   if (!gem) return null
   return getSkillDefinition(gem.skillId)?.name ?? null
+}
+
+// Skills the character would have after equipping this gem into the selected slot
+const newSkillsList = computed(() => {
+  const char = selectedChar.value
+  if (!char || !skillDef.value || !selectedSlot.value) return null
+  const currentSkills = charactersStore.getEquippedSkills(char.id)
+  const slotGemId = char.skills[selectedSlot.value]
+  const displaced = slotGemId
+    ? (() => {
+        const g = skillsStore.getSkillGem(slotGemId)
+        return g ? getSkillDefinition(g.skillId) ?? null : null
+      })()
+    : null
+  const without = displaced ? currentSkills.filter((sk) => sk.id !== displaced.id) : currentSkills
+  return [...without, skillDef.value]
+})
+
+const currentDPS = computed(() => {
+  const char = selectedChar.value
+  if (!char) return 0
+  const s = calculateStats(char)
+  const skills = charactersStore.getEquippedSkills(char.id)
+  return computeTotalDPS(skills, char.baseStats, s)
+})
+
+const newDPS = computed(() => {
+  const char = selectedChar.value
+  if (!char || !newSkillsList.value) return currentDPS.value
+  return computeTotalDPS(newSkillsList.value, char.baseStats, calculateStats(char))
+})
+
+const currentSurv = computed(() => {
+  const char = selectedChar.value
+  if (!char) return 0
+  return computeAverageSurvivability(calculateStats(char), charactersStore.getEquippedSkills(char.id))
+})
+
+const newSurv = computed(() => {
+  const char = selectedChar.value
+  if (!char || !newSkillsList.value) return currentSurv.value
+  return computeAverageSurvivability(calculateStats(char), newSkillsList.value)
+})
+
+function fmtNum(n: number): string {
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n)
+}
+
+function fmtDelta(d: number): string {
+  if (d === 0) return ''
+  return (d > 0 ? '+' : '') + fmtNum(d)
+}
+
+function deltaCls(d: number): string {
+  if (d > 0) return 'delta-pos'
+  if (d < 0) return 'delta-neg'
+  return ''
 }
 
 const canEquip = computed(() => selectedCharId.value !== null && selectedSlot.value !== null)
@@ -334,6 +424,56 @@ function onDisassemble() {
   color: var(--color-text-dim);
   font-style: italic;
 }
+
+/* Stat preview */
+.stat-preview {
+  margin-bottom: var(--spacing-md);
+}
+
+.stat-preview-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.stat-preview-label {
+  color: var(--color-text-secondary);
+}
+
+.stat-preview-values {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-val {
+  color: var(--color-text-primary);
+  font-weight: 500;
+  min-width: 36px;
+  text-align: right;
+}
+
+.stat-arrow {
+  color: var(--color-text-dim);
+  font-size: 11px;
+}
+
+.stat-delta {
+  font-size: 12px;
+  min-width: 40px;
+  text-align: right;
+}
+
+.delta-pos { color: #6cbf6c; }
+.delta-neg { color: #c06060; }
 
 /* Actions */
 .modal-actions {
