@@ -1,4 +1,36 @@
 
+# Path of Idle
+
+## Stack
+
+Vue 3 · TypeScript · Vite · Pinia
+
+**Dev:** `bun run dev` · **Build:** `bun run build` · **Typecheck:** `bun run typecheck`
+
+## Architecture
+
+```
+src/engine/   — pure TS, no Vue imports (stat calculation, combat, loot, XP)
+src/stores/   — Pinia bridge between engine and UI (characters, inventory, mapRuns)
+src/components/ — Vue UI only, reads from stores and engine
+src/types/    — all shared interfaces, re-exported from index.ts
+src/data/     — static game data (maps, items, skill definitions)
+```
+
+## Central game mechanics — single source of truth
+
+Three functions implement the core game mechanics. **Never reimplement or duplicate their logic elsewhere.** Any UI that needs to show stats or calculations to the player must call these functions directly.
+
+- **`simulateCombat`** (`src/engine/combatSimulator.ts`) — the authoritative combat simulation. Returns all combat results including survival ratio, damage figures, clear speed, and every buffed stat value needed for display (health, defense, resistances, EHP). All passive aura buffs are applied inside this function.
+
+- **`computeAverageSurvivability`** (`src/engine/combatSimulator.ts`) — the authoritative survivability calculation. Returns `SurvivabilityResult` with EHP and all buffed defensive stats. Called by `simulateCombat`; also usable standalone when map context is not available (e.g. character sheet, item comparison).
+
+- **`computeRunDurationMs`** (`src/stores/mapRuns.ts`) — the authoritative map run duration calculation. Combines movement speed and clear speed multiplier into a final duration. Used by both `startRun` (to set the actual run timer) and the dispatch UI (to preview duration).
+
+When displaying any stat that feeds into these calculations, retrieve the value from their return types — do not recompute it with inline formulas.
+
+---
+
 Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
