@@ -34,18 +34,6 @@
           </span>
         </div>
         <div class="stat-pill">
-          <span class="stat-label">Loot bonus</span>
-          <span class="stat-value">
-            <span :class="dpsBonus > 0 ? 'positive' : ''">+{{ dpsBonus }} item{{ dpsBonus !== 1 ? 's' : '' }}</span>
-          </span>
-        </div>
-        <div class="stat-pill">
-          <span class="stat-label">Rarity chance</span>
-          <span class="stat-value">
-            <span :class="rarityBonusPct > 0 ? 'positive' : ''">+{{ rarityBonusPct }}%</span>
-          </span>
-        </div>
-        <div class="stat-pill">
           <span class="stat-label">Survival</span>
           <span class="stat-value" :class="survivalPct >= 100 ? 'positive' : survivalPct < 30 ? 'negative' : ''">
             {{ survivalPct >= 100 ? '100%' : survivalPct + '%' }}
@@ -106,20 +94,6 @@ const durationDeltaPct = computed(() => {
   const base = props.map.durationSeconds
   const delta = effectiveDurationSecs.value - base
   return Math.round((delta / base) * 100)
-})
-
-const dpsBonus = computed(() => {
-  if (!selectedCharacter.value) return 0
-  const stats = calculateStats(selectedCharacter.value)
-  const dps = stats.attackDamage * stats.attackSpeed
-  return Math.floor(Math.max(0, dps / 15.0 - 1))
-})
-
-const rarityBonusPct = computed(() => {
-  if (!selectedCharacter.value) return 0
-  const stats = calculateStats(selectedCharacter.value)
-  const dps = stats.attackDamage * stats.attackSpeed
-  return Math.round(Math.min(75, Math.max(0, (dps - 3) / 30) * 100))
 })
 
 const survivalPct = computed(() => {

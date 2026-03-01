@@ -43,12 +43,15 @@ export function simulateCombat(
     chaos: chaosMitigation,
   }
 
+  // Higher damage output kills enemies faster, reducing the effective window of incoming damage
+  const effectiveDuration = durationSeconds * clearSpeedMultiplier
+
   let totalDamageTaken = 0
   for (const type of Object.keys(damageProfile) as Array<keyof DamageProfile>) {
     const fraction = damageProfile[type]
     if (fraction <= 0) continue
     const typeDps = enemyDps * fraction
-    totalDamageTaken += typeDps * (1 - mitigations[type]) * durationSeconds
+    totalDamageTaken += typeDps * (1 - mitigations[type]) * effectiveDuration
   }
 
   if (totalDamageTaken <= 0) {
