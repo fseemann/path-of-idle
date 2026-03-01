@@ -2,7 +2,7 @@
   <div class="inv-panel">
     <div class="panel-header">
       <h2>Inventory</h2>
-      <span class="panel-sub">Click an item to equip or disassemble it.</span>
+      <span class="panel-sub">Click an item to equip or manage it.</span>
       <span class="item-count">{{ inventoryStore.items.length }} item(s)</span>
     </div>
 
@@ -35,75 +35,67 @@
       </div>
     </div>
 
-    <!-- Skill Gems -->
-    <div class="gems-section">
-      <div class="gems-header">
-        <span class="section-title">Skill Gems ({{ unequippedGems.length }})</span>
+    <!-- Filter Buttons -->
+    <div class="filter-row">
+      <button
+        v-for="f in filterDefs"
+        :key="f.key"
+        class="filter-btn"
+        :class="{ active: activeFilter === f.key }"
+        @click="activeFilter = f.key"
+      >{{ f.label }} <span class="filter-count">({{ f.count }})</span></button>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div v-if="showEquipmentBulk || showGemBulk" class="bulk-actions">
+      <span class="bulk-label">Disassemble:</span>
+      <button
+        v-if="showGemBulk"
+        class="bulk-btn bulk-gems"
+        @click="disassembleAllGems"
+      >Gems ({{ unequippedGems.length }})</button>
+      <template v-if="showEquipmentBulk">
         <button
-          v-if="unequippedGems.length > 0"
-          class="bulk-btn bulk-gems"
-          @click="disassembleAllGems"
-        >Disassemble All ({{ unequippedGems.length }})</button>
-      </div>
-      <div v-if="unequippedGems.length === 0" class="gems-empty">
-        No unequipped gems. Run maps to find skill gems!
-      </div>
-      <div v-else class="gems-grid">
-        <SkillGemCard
-          v-for="gem in unequippedGems"
-          :key="gem.id"
-          :gem="gem"
-          @open="openGem"
-        />
-      </div>
+          class="bulk-btn"
+          :class="{ 'bulk-normal': normalCount > 0 }"
+          :disabled="normalCount === 0"
+          @click="disassembleAllRarity('normal')"
+        >Normal ({{ normalCount }})</button>
+        <button
+          class="bulk-btn"
+          :class="{ 'bulk-magic': magicCount > 0 }"
+          :disabled="magicCount === 0"
+          @click="disassembleAllRarity('magic')"
+        >Magic ({{ magicCount }})</button>
+        <button
+          class="bulk-btn"
+          :class="{ 'bulk-rare': rareCount > 0 }"
+          :disabled="rareCount === 0"
+          @click="disassembleAllRarity('rare')"
+        >Rare ({{ rareCount }})</button>
+      </template>
     </div>
 
-    <SkillGemModal
-      v-if="gemTarget"
-      :gem="gemTarget"
-      @close="gemTarget = null"
-    />
-
-    <!-- Bulk Disassemble -->
-    <div v-if="inventoryStore.items.length > 0" class="bulk-actions">
-      <span class="bulk-label">Disassemble all:</span>
-      <button
-        class="bulk-btn"
-        :class="{ 'bulk-normal': normalCount > 0 }"
-        :disabled="normalCount === 0"
-        @click="disassembleAllRarity('normal')"
-      >Normal ({{ normalCount }})</button>
-      <button
-        class="bulk-btn"
-        :class="{ 'bulk-magic': magicCount > 0 }"
-        :disabled="magicCount === 0"
-        @click="disassembleAllRarity('magic')"
-      >Magic ({{ magicCount }})</button>
-      <button
-        class="bulk-btn"
-        :class="{ 'bulk-rare': rareCount > 0 }"
-        :disabled="rareCount === 0"
-        @click="disassembleAllRarity('rare')"
-      >Rare ({{ rareCount }})</button>
+    <!-- Unified Item Grid -->
+    <div v-if="filteredItems.length === 0" class="inv-empty">
+      <p>No items match this filter.</p>
     </div>
-
-    <div v-if="inventoryStore.items.length === 0" class="inv-empty">
-      <p>No items yet. Send heroes on maps to find equipment.</p>
-    </div>
-
     <div v-else class="inv-grid">
-      <ItemCard
-        v-for="item in inventoryStore.items"
-        :key="item.id"
-        :item="item"
-        @equip="openEquip"
-      />
+      <template v-for="entry in filteredItems" :key="entry.kind === 'equipment' ? entry.item.id : entry.gem.id">
+        <ItemCard v-if="entry.kind === 'equipment'" :item="entry.item" @equip="openEquip" />
+        <SkillGemCard v-else :gem="entry.gem" @open="openGem" />
+      </template>
     </div>
 
     <EquipItemModal
       v-if="equipTarget"
       :item="equipTarget"
       @close="equipTarget = null"
+    />
+    <SkillGemModal
+      v-if="gemTarget"
+      :gem="gemTarget"
+      @close="gemTarget = null"
     />
   </div>
 </template>
@@ -141,13 +133,49 @@ function disassembleAllGems() {
   }
 }
 
-const normalCount = computed(() => inventoryStore.items.filter((i) => i.rarity === 'normal' && !i.locked).length)
-const magicCount  = computed(() => inventoryStore.items.filter((i) => i.rarity === 'magic'  && !i.locked).length)
-const rareCount   = computed(() => inventoryStore.items.filter((i) => i.rarity === 'rare'   && !i.locked).length)
+type FilterKey = 'all' | 'helmet' | 'bodyArmor' | 'weapon' | 'gloves' | 'boots' | 'ring' | 'gems'
+const activeFilter = ref<FilterKey>('all')
+
+type UnifiedEntry =
+  | { kind: 'equipment'; item: EquipmentItem }
+  | { kind: 'gem'; gem: SkillGem }
+
+const filterDefs = computed(() => [
+  { key: 'all' as FilterKey,      label: 'All',      count: inventoryStore.items.length + unequippedGems.value.length },
+  { key: 'helmet' as FilterKey,   label: 'Helmet',   count: inventoryStore.items.filter(i => i.slot === 'helmet').length },
+  { key: 'bodyArmor' as FilterKey,label: 'Body',     count: inventoryStore.items.filter(i => i.slot === 'bodyArmor').length },
+  { key: 'weapon' as FilterKey,   label: 'Weapon',   count: inventoryStore.items.filter(i => i.slot === 'weapon').length },
+  { key: 'gloves' as FilterKey,   label: 'Gloves',   count: inventoryStore.items.filter(i => i.slot === 'gloves').length },
+  { key: 'boots' as FilterKey,    label: 'Boots',    count: inventoryStore.items.filter(i => i.slot === 'boots').length },
+  { key: 'ring' as FilterKey,     label: 'Ring',     count: inventoryStore.items.filter(i => i.slot === 'ring').length },
+  { key: 'gems' as FilterKey,     label: 'Gems',     count: unequippedGems.value.length },
+])
+
+const filteredItems = computed((): UnifiedEntry[] => {
+  const allEntries: UnifiedEntry[] = [
+    ...inventoryStore.items.map(item => ({ kind: 'equipment' as const, item })),
+    ...unequippedGems.value.map(gem => ({ kind: 'gem' as const, gem })),
+  ]
+  if (activeFilter.value === 'all') return allEntries
+  if (activeFilter.value === 'gems') return allEntries.filter(e => e.kind === 'gem')
+  return allEntries.filter(e => e.kind === 'equipment' && e.item.slot === activeFilter.value)
+})
+
+const filteredEquipment = computed(() =>
+  filteredItems.value.filter((e): e is { kind: 'equipment'; item: EquipmentItem } => e.kind === 'equipment').map(e => e.item)
+)
+
+const normalCount = computed(() => filteredEquipment.value.filter(i => i.rarity === 'normal' && !i.locked).length)
+const magicCount  = computed(() => filteredEquipment.value.filter(i => i.rarity === 'magic'  && !i.locked).length)
+const rareCount   = computed(() => filteredEquipment.value.filter(i => i.rarity === 'rare'   && !i.locked).length)
+
+const showEquipmentBulk = computed(() => filteredEquipment.value.length > 0)
+const showGemBulk = computed(() =>
+  unequippedGems.value.length > 0 && (activeFilter.value === 'all' || activeFilter.value === 'gems')
+)
 
 function disassembleAllRarity(rarity: ItemRarity) {
-  // Snapshot the list first so we're not mutating while iterating; skip locked items
-  const targets = inventoryStore.items.filter((i) => i.rarity === rarity && !i.locked).slice()
+  const targets = filteredEquipment.value.filter(i => i.rarity === rarity && !i.locked).slice()
   for (const item of targets) {
     currencyStore.disassembleItem(item)
     inventoryStore.removeItem(item.id)
@@ -261,48 +289,33 @@ function disassembleAllRarity(rarity: ItemRarity) {
   text-align: right;
 }
 
-/* Skill Gems */
-.gems-section {
+/* Filter row */
+.filter-row {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
 }
 
-.gems-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-}
-
-.section-title {
+.filter-btn {
   font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  padding: 3px var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-dark);
   color: var(--color-text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
-.gems-empty {
-  font-size: 13px;
-  color: var(--color-text-dim);
-  font-style: italic;
-  padding: var(--spacing-sm) 0;
+.filter-btn.active {
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
 }
 
-.gems-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--spacing-sm);
-  align-content: start;
-}
-
-.bulk-gems {
-  color: #9ab8d8;
-}
-
-.bulk-gems:hover {
-  border-color: #9ab8d8;
-  color: #9ab8d8;
+.filter-count {
+  font-size: 11px;
+  color: var(--color-text-muted, var(--color-text-dim));
+  opacity: 0.7;
 }
 
 /* Bulk actions */
@@ -334,6 +347,9 @@ function disassembleAllRarity(rarity: ItemRarity) {
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+.bulk-gems        { color: #9ab8d8; }
+.bulk-gems:hover  { border-color: #9ab8d8; color: #9ab8d8; }
 
 .bulk-normal:hover { border-color: var(--color-rarity-normal); color: var(--color-rarity-normal); }
 .bulk-magic:hover  { border-color: var(--color-rarity-magic);  color: var(--color-rarity-magic); }
