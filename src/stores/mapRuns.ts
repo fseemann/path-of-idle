@@ -5,8 +5,6 @@ import { GAME_MAPS } from '@/data/maps'
 import { generateLoot } from '@/engine/lootGenerator'
 import { calculateStats } from '@/engine/statCalculator'
 import { simulateCombat } from '@/engine/combatSimulator'
-import { initializeSkillState, tickSkills } from '@/engine/skillExecutor'
-import { calculateReservedMana, regenerateMana, calculateManaRegenRate } from '@/engine/manaCalculator'
 import { useCharactersStore } from './characters'
 import { useInventoryStore } from './inventory'
 import { useSkillsStore } from './skills'
@@ -87,18 +85,6 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
     const runId = crypto.randomUUID()
     const now = Date.now()
 
-    // Initialize skill state
-    const equippedSkills = character
-      ? useCharactersStore().getEquippedSkills(character.id)
-      : []
-    const { cooldowns, activeBuffs } = initializeSkillState(equippedSkills)
-
-    // Calculate initial mana
-    const stats = character ? calculateStats(character) : { maxMana: 30 } as any
-    const passiveSkills = equippedSkills.filter((s) => s.type === 'passive')
-    const reservedMana = calculateReservedMana(stats.maxMana, passiveSkills)
-    const availableMana = stats.maxMana - reservedMana
-
     runs.value.push({
       id: runId,
       mapId,
@@ -108,9 +94,6 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
       completedAt: null,
       lootCollected: false,
       autoRerun,
-      skillCooldowns: cooldowns,
-      activeBuffs,
-      currentMana: availableMana,
     })
     return runId
   }
@@ -162,46 +145,9 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
   function tick() {
     const now = Date.now()
     currentTime.value = now // triggers reactivity for getProgress computed
-    const deltaSeconds = 1 // tick runs every 1 second
 
     for (const run of runs.value) {
       if (run.completedAt !== null) continue
-
-      // Get character and skills
-      const character = useCharactersStore().getCharacter(run.characterId)
-      if (character) {
-        const equippedSkills = useCharactersStore().getEquippedSkills(character.id)
-        const stats = calculateStats(character)
-
-        // Tick skills if we have skill state
-        if (run.skillCooldowns && run.activeBuffs && run.currentMana !== undefined) {
-          const result = tickSkills(
-            equippedSkills,
-            run.skillCooldowns,
-            run.activeBuffs,
-            run.currentMana,
-            now,
-            deltaSeconds
-          )
-
-          run.skillCooldowns = result.cooldowns
-          run.activeBuffs = result.activeBuffs
-          run.currentMana -= result.manaConsumed
-
-          // Regenerate mana
-          const passiveSkills = equippedSkills.filter((s) => s.type === 'passive')
-          const reservedMana = calculateReservedMana(stats.maxMana, passiveSkills)
-          const regenRate = calculateManaRegenRate(stats)
-
-          run.currentMana = regenerateMana(
-            run.currentMana,
-            stats.maxMana,
-            reservedMana,
-            regenRate,
-            deltaSeconds
-          )
-        }
-      }
 
       // Check for completion
       if (now >= run.startedAt + run.durationMs) {

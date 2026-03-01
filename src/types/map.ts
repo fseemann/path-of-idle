@@ -37,17 +37,6 @@ export interface MapRun {
   lootCollected: boolean
   autoRerun: boolean
   survivalRatio?: number
-
-  // Skill runtime state
-  skillCooldowns?: Array<{ skillId: string; remainingCooldown: number }>
-  activeBuffs?: Array<{
-    skillId: string
-    target: string
-    kind: 'flat' | 'increased'
-    value: number
-    expiresAt: number | null
-  }>
-  currentMana?: number
 }
 
 export interface RunProgress {
