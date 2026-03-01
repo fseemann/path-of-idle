@@ -130,7 +130,7 @@ describe('Skill System', () => {
     expect(result.clearSpeedMultiplier).toBeGreaterThanOrEqual(0.5) // Min 0.5 (50% faster)
   })
 
-  test('character without skills has no offensive bonus', () => {
+  test('character without active skills still has auto-attack damage', () => {
     const noSkillsChar: Character = {
       ...testCharacter,
       skills: {},
@@ -141,10 +141,11 @@ describe('Skill System', () => {
 
     const result = simulateCombat(map, stats, noSkillsChar.baseStats, [])
 
-    // No skills = no damage
-    expect(result.totalDamageDealt).toBe(0)
+    // Auto-attacks contribute even without skills
+    expect(result.totalDamageDealt).toBeGreaterThan(0)
 
-    // Clear speed multiplier should be 1.0 (no bonus)
-    expect(result.clearSpeedMultiplier).toBe(1.0)
+    // Small auto-attack damage means near-baseline clear speed (tiny bonus)
+    expect(result.clearSpeedMultiplier).toBeGreaterThan(0.9)
+    expect(result.clearSpeedMultiplier).toBeLessThan(1.0)
   })
 })

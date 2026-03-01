@@ -2,29 +2,45 @@ import type { GameMap, ComputedStats, DamageProfile, SkillDefinition, BaseStats 
 import { computeTotalDPS, calculateClearSpeedMultiplier } from './offensiveCombat'
 import { initializeSkillState, applySkillBuffs } from './skillExecutor'
 
+const EQUAL_DAMAGE_PROFILE: DamageProfile = {
+  physical: 0.2,
+  fire: 0.2,
+  cold: 0.2,
+  lightning: 0.2,
+  chaos: 0.2,
+}
+
 /**
- * Compute average Effective HP across all 5 damage types with equal weighting.
- * Passive aura buffs (e.g. Vitality +15% health) are applied before computing
- * so the survivability figure reflects their contribution.
+ * Compute Effective HP weighted by a damage profile.
+ * Passive aura buffs (e.g. Vitality +15% health) are applied before computing.
  *
- * EHP for each type = health / (1 - mitigation)
+ * Formula: health / Σ(fraction_i × max(0.01, 1 − mitigation_i))
+ *
+ * With the default equal weighting this produces the character sheet survivability.
+ * Passing a map's damageProfile produces a map-specific EHP used in combat.
  */
 export function computeAverageSurvivability(
   stats: ComputedStats,
-  skills: SkillDefinition[] = []
+  skills: SkillDefinition[] = [],
+  damageProfile: DamageProfile = EQUAL_DAMAGE_PROFILE
 ): number {
   const { activeBuffs } = initializeSkillState(skills)
   const boostedStats = applySkillBuffs(stats, activeBuffs)
 
-  const physMit = Math.min(0.75, boostedStats.defense / (boostedStats.defense + 200))
-  const fireMit = Math.min(0.75, boostedStats.fireResistance / 100)
-  const coldMit = Math.min(0.75, boostedStats.iceResistance / 100)
-  const lightningMit = Math.min(0.75, boostedStats.lightningResistance / 100)
-  const chaosMit = Math.max(-1, boostedStats.chaosResistance / 100)
+  const mitigations: Record<keyof DamageProfile, number> = {
+    physical: Math.min(0.75, boostedStats.defense / (boostedStats.defense + 200)),
+    fire: Math.min(0.75, boostedStats.fireResistance / 100),
+    cold: Math.min(0.75, boostedStats.iceResistance / 100),
+    lightning: Math.min(0.75, boostedStats.lightningResistance / 100),
+    chaos: Math.max(-1, boostedStats.chaosResistance / 100),
+  }
 
-  const ehp = (mit: number) => boostedStats.health / Math.max(0.01, 1 - mit)
-  const avg = (ehp(physMit) + ehp(fireMit) + ehp(coldMit) + ehp(lightningMit) + ehp(chaosMit)) / 5
-  return Math.round(avg)
+  const weightedDamageFactor = (Object.keys(mitigations) as Array<keyof DamageProfile>).reduce(
+    (sum, type) => sum + damageProfile[type] * Math.max(0.01, 1 - mitigations[type]),
+    0
+  )
+
+  return Math.round(boostedStats.health / weightedDamageFactor)
 }
 
 export interface CombatResult {
@@ -47,35 +63,11 @@ export function simulateCombat(
   const totalDamageDealt = totalDps * durationSeconds
   const clearSpeedMultiplier = calculateClearSpeedMultiplier(totalDamageDealt)
 
-  // Physical mitigation: armor formula, capped at 75%
-  const physMitigation = Math.min(0.75, stats.defense / (stats.defense + 200))
-  // Elemental: statCalculator already caps these at 0–75
-  const fireMitigation = stats.fireResistance / 100
-  const coldMitigation = stats.iceResistance / 100
-  const lightningMitigation = stats.lightningResistance / 100
-  // Chaos: uncapped, can amplify damage
-  const chaosMitigation = Math.max(-1, stats.chaosResistance / 100)
+  // EHP weighted by this map's damage profile — same formula as character sheet survivability
+  const ehp = computeAverageSurvivability(stats, equippedSkills, damageProfile)
+  const totalRawDamage = enemyDps * durationSeconds * clearSpeedMultiplier
 
-  const mitigations: Record<keyof DamageProfile, number> = {
-    physical: physMitigation,
-    fire: fireMitigation,
-    cold: coldMitigation,
-    lightning: lightningMitigation,
-    chaos: chaosMitigation,
-  }
-
-  // Higher damage output kills enemies faster, reducing the effective window of incoming damage
-  const effectiveDuration = durationSeconds * clearSpeedMultiplier
-
-  let totalDamageTaken = 0
-  for (const type of Object.keys(damageProfile) as Array<keyof DamageProfile>) {
-    const fraction = damageProfile[type]
-    if (fraction <= 0) continue
-    const typeDps = enemyDps * fraction
-    totalDamageTaken += typeDps * (1 - mitigations[type]) * effectiveDuration
-  }
-
-  if (totalDamageTaken <= 0) {
+  if (totalRawDamage <= 0) {
     return {
       survivalRatio: 1,
       totalDamageTaken: 0,
@@ -85,8 +77,8 @@ export function simulateCombat(
   }
 
   return {
-    survivalRatio: Math.min(1, stats.health / totalDamageTaken),
-    totalDamageTaken,
+    survivalRatio: Math.min(1, ehp / totalRawDamage),
+    totalDamageTaken: totalRawDamage,
     clearSpeedMultiplier,
     totalDamageDealt,
   }
