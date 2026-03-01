@@ -156,6 +156,11 @@ const filteredItems = computed((): UnifiedEntry[] => {
     ...inventoryStore.items.map(item => ({ kind: 'equipment' as const, item })),
     ...unequippedGems.value.map(gem => ({ kind: 'gem' as const, gem })),
   ]
+  allEntries.sort((a, b) => {
+    const ta = a.kind === 'equipment' ? (a.item.createdAt ?? 0) : (a.gem.createdAt ?? 0)
+    const tb = b.kind === 'equipment' ? (b.item.createdAt ?? 0) : (b.gem.createdAt ?? 0)
+    return ta - tb
+  })
   if (activeFilter.value === 'all') return allEntries
   if (activeFilter.value === 'gems') return allEntries.filter(e => e.kind === 'gem')
   return allEntries.filter(e => e.kind === 'equipment' && e.item.slot === activeFilter.value)

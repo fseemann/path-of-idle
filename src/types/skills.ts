@@ -37,6 +37,7 @@ export interface SkillDefinition {
 export interface SkillGem {
   id: string
   skillId: string // references SkillDefinition
+  createdAt?: number
   // Future: quality, level, etc.
 }
 

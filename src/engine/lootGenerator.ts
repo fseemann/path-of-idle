@@ -109,6 +109,7 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
       rarity,
       levelRequirement,
       itemTier: map.tier,
+      createdAt: Date.now(),
       statRequirements: {},
       modifiers,
     }
@@ -143,6 +144,7 @@ export function generateLoot(map: GameMap, character: Character, survivalRatio =
       skillGems.push({
         id: crypto.randomUUID(),
         skillId: skill.id,
+        createdAt: Date.now(),
       })
     }
   }
