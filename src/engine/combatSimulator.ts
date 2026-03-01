@@ -1,5 +1,5 @@
 import type { GameMap, ComputedStats, DamageProfile, SkillDefinition, BaseStats } from '@/types'
-import { calculateTotalSkillDamage, calculateClearSpeedMultiplier } from './offensiveCombat'
+import { computeTotalDPS, calculateClearSpeedMultiplier } from './offensiveCombat'
 import { initializeSkillState, applySkillBuffs } from './skillExecutor'
 
 /**
@@ -42,14 +42,9 @@ export function simulateCombat(
 ): CombatResult {
   const { enemyDps, damageProfile, durationSeconds } = map
 
-  // Calculate offensive damage output
-  const skillDamageResults = calculateTotalSkillDamage(
-    equippedSkills,
-    baseStats,
-    stats,
-    durationSeconds
-  )
-  const totalDamageDealt = skillDamageResults.reduce((sum, r) => sum + r.totalDamage, 0)
+  // Calculate offensive damage output — same DPS figure shown on character sheet
+  const totalDps = computeTotalDPS(equippedSkills, baseStats, stats)
+  const totalDamageDealt = totalDps * durationSeconds
   const clearSpeedMultiplier = calculateClearSpeedMultiplier(totalDamageDealt)
 
   // Physical mitigation: armor formula, capped at 75%
