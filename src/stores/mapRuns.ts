@@ -5,6 +5,7 @@ import { GAME_MAPS } from '@/data/maps'
 import { generateLoot } from '@/engine/lootGenerator'
 import { calculateStats } from '@/engine/statCalculator'
 import { simulateCombat } from '@/engine/combatSimulator'
+import { computeTotalDPS, calculateClearSpeedMultiplier } from '@/engine/offensiveCombat'
 import { useCharactersStore } from './characters'
 import { useInventoryStore } from './inventory'
 import { useSkillsStore } from './skills'
@@ -73,13 +74,17 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
       existing.lootCollected = true
     }
 
-    const character = useCharactersStore().getCharacter(characterId)
+    const charactersStore = useCharactersStore()
+    const character = charactersStore.getCharacter(characterId)
     const baseDurationMs = map.durationSeconds * 1000
     let durationMs = baseDurationMs
     if (character) {
       const stats = calculateStats(character)
       const speedFactor = Math.max(0.5, 100 / stats.movementSpeed)
-      durationMs = Math.round(baseDurationMs * speedFactor)
+      const equippedSkills = charactersStore.getEquippedSkills(characterId)
+      const totalDps = computeTotalDPS(equippedSkills, character.baseStats, stats, map.durationSeconds)
+      const clearSpeedMultiplier = calculateClearSpeedMultiplier(totalDps * map.durationSeconds)
+      durationMs = Math.round(baseDurationMs * speedFactor * clearSpeedMultiplier)
     }
 
     const runId = crypto.randomUUID()
