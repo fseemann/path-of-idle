@@ -5,10 +5,18 @@ import { GAME_MAPS } from '@/data/maps'
 import { generateLoot } from '@/engine/lootGenerator'
 import { calculateStats } from '@/engine/statCalculator'
 import { simulateCombat } from '@/engine/combatSimulator'
-import { computeTotalDPS, calculateClearSpeedMultiplier } from '@/engine/offensiveCombat'
 import { useCharactersStore } from './characters'
 import { useInventoryStore } from './inventory'
 import { useSkillsStore } from './skills'
+
+export function computeRunDurationMs(
+  baseDurationSeconds: number,
+  movementSpeed: number,
+  clearSpeedMultiplier: number
+): { speedFactor: number; durationMs: number } {
+  const speedFactor = Math.max(0.5, 100 / movementSpeed)
+  return { speedFactor, durationMs: Math.round(baseDurationSeconds * 1000 * speedFactor * clearSpeedMultiplier) }
+}
 
 const STORAGE_KEY = 'poi-mapruns'
 
@@ -76,15 +84,12 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
 
     const charactersStore = useCharactersStore()
     const character = charactersStore.getCharacter(characterId)
-    const baseDurationMs = map.durationSeconds * 1000
-    let durationMs = baseDurationMs
+    let durationMs = map.durationSeconds * 1000
     if (character) {
       const stats = calculateStats(character)
-      const speedFactor = Math.max(0.5, 100 / stats.movementSpeed)
       const equippedSkills = charactersStore.getEquippedSkills(characterId)
-      const totalDps = computeTotalDPS(equippedSkills, character.baseStats, stats, map.durationSeconds)
-      const clearSpeedMultiplier = calculateClearSpeedMultiplier(totalDps * map.durationSeconds)
-      durationMs = Math.round(baseDurationMs * speedFactor * clearSpeedMultiplier)
+      const { clearSpeedMultiplier } = simulateCombat(map, stats, character.baseStats, equippedSkills)
+      ;({ durationMs } = computeRunDurationMs(map.durationSeconds, stats.movementSpeed, clearSpeedMultiplier))
     }
 
     const runId = crypto.randomUUID()

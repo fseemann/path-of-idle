@@ -209,13 +209,13 @@ const newDPS = computed(() => {
 const currentSurv = computed(() => {
   const char = selectedChar.value
   if (!char) return 0
-  return computeAverageSurvivability(calculateStats(char), charactersStore.getEquippedSkills(char.id))
+  return computeAverageSurvivability(calculateStats(char), charactersStore.getEquippedSkills(char.id)).ehp
 })
 
 const newSurv = computed(() => {
   const char = selectedChar.value
   if (!char || !newSkillsList.value) return currentSurv.value
-  return computeAverageSurvivability(calculateStats(char), newSkillsList.value)
+  return computeAverageSurvivability(calculateStats(char), newSkillsList.value).ehp
 })
 
 function fmtNum(n: number): string {

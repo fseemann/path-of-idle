@@ -23,21 +23,94 @@
         </p>
       </div>
 
-      <div v-if="selectedId" class="stat-preview">
-        <div class="stat-pill">
-          <span class="stat-label">Duration</span>
-          <span class="stat-value">
-            {{ effectiveDurationSecs }}s
-            <span v-if="durationDeltaPct !== 0" class="stat-delta" :class="durationDeltaPct < 0 ? 'positive' : 'negative'">
-              ({{ durationDeltaPct > 0 ? '+' : '' }}{{ durationDeltaPct }}%)
-            </span>
-          </span>
+      <div v-if="preview" class="breakdown-sections">
+        <!-- Duration breakdown -->
+        <div class="breakdown-section">
+          <div class="section-title">Duration</div>
+          <div class="breakdown-rows">
+            <div class="breakdown-row">
+              <span class="row-label">Base</span>
+              <span class="row-value">{{ map.durationSeconds }}s</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="row-label">
+                Movement speed
+                <span class="row-detail">{{ preview.movementSpeed }}</span>
+              </span>
+              <span
+                class="row-value"
+                :class="preview.speedPct < 0 ? 'col-positive' : preview.speedPct > 0 ? 'col-negative' : ''"
+              >
+                {{ formatMultiplier(preview.speedFactor) }}
+                <span v-if="preview.speedPct !== 0" class="row-delta">{{ formatDelta(preview.speedPct) }}</span>
+              </span>
+            </div>
+            <div class="breakdown-row">
+              <span class="row-label">
+                Clear speed
+                <span class="row-detail">{{ preview.totalDps }} DPS</span>
+              </span>
+              <span class="row-value" :class="preview.clearSpeedPct < 0 ? 'col-positive' : ''">
+                {{ formatMultiplier(preview.clearSpeedMultiplier) }}
+                <span v-if="preview.clearSpeedPct !== 0" class="row-delta">{{ formatDelta(preview.clearSpeedPct) }}</span>
+              </span>
+            </div>
+          </div>
+          <div class="breakdown-total">
+            <span class="row-label">Effective</span>
+            <span class="row-value">{{ preview.effectiveDuration }}s</span>
+          </div>
         </div>
-        <div class="stat-pill">
-          <span class="stat-label">Survival</span>
-          <span class="stat-value" :class="survivalPct >= 100 ? 'positive' : survivalPct < 30 ? 'negative' : ''">
-            {{ survivalPct >= 100 ? '100%' : survivalPct + '%' }}
-          </span>
+
+        <!-- Survivability breakdown -->
+        <div class="breakdown-section">
+          <div class="section-title">Survivability</div>
+          <div class="breakdown-rows">
+            <div class="breakdown-row">
+              <span class="row-label">Health</span>
+              <span class="row-value">{{ preview.health }}</span>
+            </div>
+            <div class="breakdown-row" :class="{ 'row-dim': map.damageProfile.physical === 0 }">
+              <span class="row-label">
+                Phys. mitigation
+                <span class="row-detail">Defense {{ preview.defense }}</span>
+              </span>
+              <span class="row-value" :class="resistClass(preview.physMitigation)">{{ preview.physMitigation }}%</span>
+            </div>
+            <div class="breakdown-row" :class="{ 'row-dim': map.damageProfile.fire === 0 }">
+              <span class="row-label">Fire resistance</span>
+              <span class="row-value" :class="resistClass(preview.fireResistance)">{{ preview.fireResistance }}%</span>
+            </div>
+            <div class="breakdown-row" :class="{ 'row-dim': map.damageProfile.cold === 0 }">
+              <span class="row-label">Cold resistance</span>
+              <span class="row-value" :class="resistClass(preview.iceResistance)">{{ preview.iceResistance }}%</span>
+            </div>
+            <div class="breakdown-row" :class="{ 'row-dim': map.damageProfile.lightning === 0 }">
+              <span class="row-label">Lightning resist.</span>
+              <span class="row-value" :class="resistClass(preview.lightningResistance)">{{ preview.lightningResistance }}%</span>
+            </div>
+            <div class="breakdown-row" :class="{ 'row-dim': map.damageProfile.chaos === 0 }">
+              <span class="row-label">Chaos resistance</span>
+              <span class="row-value" :class="resistClass(preview.chaosResistance)">{{ preview.chaosResistance }}%</span>
+            </div>
+            <div class="breakdown-row row-sep">
+              <span class="row-label">Effective HP</span>
+              <span class="row-value">{{ preview.ehp }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="row-label">Enemy damage</span>
+              <span class="row-value">{{ preview.totalRawDamage }}</span>
+            </div>
+          </div>
+          <div class="breakdown-total">
+            <span class="row-label">Survival</span>
+            <span
+              class="row-value"
+              :class="preview.survivalPct >= 100 ? 'col-positive' : preview.survivalPct < 30 ? 'col-negative' : ''"
+            >
+              {{ preview.survivalPct >= 100 ? '100%' : preview.survivalPct + '%' }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -51,9 +124,7 @@
 
       <div class="modal-actions">
         <button @click="emit('close')">Cancel</button>
-        <button class="primary" :disabled="!selectedId" @click="onSend">
-          Send
-        </button>
+        <button class="primary" :disabled="!selectedId" @click="onSend">Send</button>
       </div>
     </div>
   </div>
@@ -65,6 +136,7 @@ import type { GameMap } from '@/types'
 import { useCharactersStore, useMapRunsStore } from '@/stores'
 import { calculateStats } from '@/engine/statCalculator'
 import { simulateCombat } from '@/engine/combatSimulator'
+import { computeRunDurationMs } from '@/stores/mapRuns'
 
 const props = defineProps<{ map: GameMap }>()
 const emit = defineEmits<{ close: [] }>()
@@ -83,26 +155,54 @@ const selectedCharacter = computed(() =>
   selectedId.value ? charactersStore.getCharacter(selectedId.value) ?? null : null
 )
 
-const effectiveDurationSecs = computed(() => {
-  if (!selectedCharacter.value) return props.map.durationSeconds
-  const stats = calculateStats(selectedCharacter.value)
-  const speedFactor = Math.max(0.5, 100 / stats.movementSpeed)
-  return Math.round((props.map.durationSeconds * speedFactor * 10)) / 10
+const preview = computed(() => {
+  const char = selectedCharacter.value
+  if (!char) return null
+
+  const stats = calculateStats(char)
+  const equippedSkills = charactersStore.getEquippedSkills(char.id)
+  const combat = simulateCombat(props.map, stats, char.baseStats, equippedSkills)
+  const { speedFactor, durationMs } = computeRunDurationMs(
+    props.map.durationSeconds,
+    stats.movementSpeed,
+    combat.clearSpeedMultiplier
+  )
+
+  return {
+    movementSpeed: Math.round(stats.movementSpeed),
+    speedFactor,
+    speedPct: Math.round((speedFactor - 1) * 100),
+    totalDps: Math.round(combat.totalDamageDealt / props.map.durationSeconds),
+    clearSpeedMultiplier: combat.clearSpeedMultiplier,
+    clearSpeedPct: Math.round((combat.clearSpeedMultiplier - 1) * 100),
+    effectiveDuration: Math.round(durationMs / 100) / 10,
+    health: combat.health,
+    defense: combat.defense,
+    physMitigation: combat.physMitigation,
+    fireResistance: combat.fireResistance,
+    iceResistance: combat.iceResistance,
+    lightningResistance: combat.lightningResistance,
+    chaosResistance: combat.chaosResistance,
+    ehp: combat.ehp,
+    totalRawDamage: Math.round(combat.totalDamageTaken),
+    survivalPct: Math.round(Math.min(1, combat.survivalRatio) * 100),
+  }
 })
 
-const durationDeltaPct = computed(() => {
-  const base = props.map.durationSeconds
-  const delta = effectiveDurationSecs.value - base
-  return Math.round((delta / base) * 100)
-})
+function formatMultiplier(factor: number): string {
+  return `×${factor.toFixed(2)}`
+}
 
-const survivalPct = computed(() => {
-  if (!selectedCharacter.value) return 100
-  const stats = calculateStats(selectedCharacter.value)
-  const equippedSkills = charactersStore.getEquippedSkills(selectedCharacter.value.id)
-  const { survivalRatio } = simulateCombat(props.map, stats, selectedCharacter.value.baseStats, equippedSkills)
-  return Math.round(Math.min(1, survivalRatio) * 100)
-})
+function formatDelta(pct: number): string {
+  return `(${pct > 0 ? '+' : ''}${pct}%)`
+}
+
+function resistClass(value: number): string {
+  if (value >= 75) return 'col-capped'
+  if (value >= 40) return 'col-positive'
+  if (value < 0) return 'col-negative'
+  return ''
+}
 
 function isBusy(characterId: string): boolean {
   return mapRunsStore.getActiveRunForCharacter(characterId) !== null
@@ -180,47 +280,114 @@ function onSend() {
   padding: var(--spacing-md);
 }
 
-.stat-preview {
+/* Breakdown layout */
+
+.breakdown-sections {
   display: flex;
+  flex-direction: column;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
 }
 
-.stat-pill {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--spacing-sm) var(--spacing-md);
+.breakdown-section {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  overflow: hidden;
 }
 
-.stat-label {
-  color: var(--color-text-dim);
-  font-size: 11px;
+.section-title {
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  color: var(--color-text-dim);
+  padding: 5px var(--spacing-md);
+  background: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.stat-value {
+.breakdown-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 3px var(--spacing-md);
+  font-size: 12px;
+  gap: var(--spacing-md);
+}
+
+.breakdown-row.row-sep {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+}
+
+.breakdown-row.row-dim {
+  opacity: 0.35;
+}
+
+.row-label {
+  color: var(--color-text-dim);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.row-detail {
+  font-size: 10px;
+  color: var(--color-text-dim);
+  opacity: 0.7;
+}
+
+.row-value {
   color: var(--color-text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.row-delta {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.breakdown-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  font-size: 13px;
   font-weight: 600;
 }
 
-.stat-delta {
-  font-weight: 400;
-  font-size: 11px;
+.breakdown-total .row-label {
+  color: var(--color-text-primary);
 }
 
-.positive {
+/* Color classes */
+.col-positive {
   color: var(--color-life);
 }
 
-.negative {
+.col-negative {
   color: var(--color-fire);
 }
+
+.col-capped {
+  color: var(--color-lightning);
+}
+
+/* Auto-rerun toggle */
 
 .auto-rerun-toggle {
   display: flex;

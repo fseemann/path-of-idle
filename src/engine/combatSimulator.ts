@@ -10,6 +10,17 @@ const EQUAL_DAMAGE_PROFILE: DamageProfile = {
   chaos: 0.2,
 }
 
+export interface SurvivabilityResult {
+  ehp: number
+  health: number
+  defense: number
+  physMitigation: number
+  fireResistance: number
+  iceResistance: number
+  lightningResistance: number
+  chaosResistance: number
+}
+
 /**
  * Compute Effective HP weighted by a damage profile.
  * Passive aura buffs (e.g. Vitality +15% health) are applied before computing.
@@ -23,7 +34,7 @@ export function computeAverageSurvivability(
   stats: ComputedStats,
   skills: SkillDefinition[] = [],
   damageProfile: DamageProfile = EQUAL_DAMAGE_PROFILE
-): number {
+): SurvivabilityResult {
   const { activeBuffs } = initializeSkillState(skills)
   const boostedStats = applySkillBuffs(stats, activeBuffs)
 
@@ -40,10 +51,19 @@ export function computeAverageSurvivability(
     0
   )
 
-  return Math.round(boostedStats.health / weightedDamageFactor)
+  return {
+    ehp: Math.round(boostedStats.health / weightedDamageFactor),
+    health: boostedStats.health,
+    defense: boostedStats.defense,
+    physMitigation: Math.min(75, Math.round((boostedStats.defense / (boostedStats.defense + 200)) * 100)),
+    fireResistance: Math.min(75, Math.round(boostedStats.fireResistance)),
+    iceResistance: Math.min(75, Math.round(boostedStats.iceResistance)),
+    lightningResistance: Math.min(75, Math.round(boostedStats.lightningResistance)),
+    chaosResistance: Math.round(boostedStats.chaosResistance),
+  }
 }
 
-export interface CombatResult {
+export interface CombatResult extends SurvivabilityResult {
   survivalRatio: number
   totalDamageTaken: number
   clearSpeedMultiplier: number
@@ -63,21 +83,17 @@ export function simulateCombat(
   const totalDamageDealt = totalDps * durationSeconds
   const clearSpeedMultiplier = calculateClearSpeedMultiplier(totalDamageDealt)
 
-  // EHP weighted by this map's damage profile — same formula as character sheet survivability
-  const ehp = computeAverageSurvivability(stats, equippedSkills, damageProfile)
+  // EHP weighted by this map's damage profile — also returns buffed display stats
+  const surviv = computeAverageSurvivability(stats, equippedSkills, damageProfile)
   const totalRawDamage = enemyDps * durationSeconds * clearSpeedMultiplier
 
   if (totalRawDamage <= 0) {
-    return {
-      survivalRatio: 1,
-      totalDamageTaken: 0,
-      clearSpeedMultiplier,
-      totalDamageDealt,
-    }
+    return { ...surviv, survivalRatio: 1, totalDamageTaken: 0, clearSpeedMultiplier, totalDamageDealt }
   }
 
   return {
-    survivalRatio: Math.min(1, ehp / totalRawDamage),
+    ...surviv,
+    survivalRatio: Math.min(1, surviv.ehp / totalRawDamage),
     totalDamageTaken: totalRawDamage,
     clearSpeedMultiplier,
     totalDamageDealt,

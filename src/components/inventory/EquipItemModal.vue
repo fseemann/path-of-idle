@@ -240,14 +240,14 @@ const newDPS = computed(() => {
 
 const currentSurv = computed(() => {
   if (!selectedChar.value) return 0
-  return computeAverageSurvivability(calculateStats(selectedChar.value), previewSkills.value)
+  return computeAverageSurvivability(calculateStats(selectedChar.value), previewSkills.value).ehp
 })
 
 const newSurv = computed(() => {
   if (!selectedChar.value) return 0
   const clone = JSON.parse(JSON.stringify(toRaw(selectedChar.value)))
   clone.equipment[targetSlot.value] = JSON.parse(JSON.stringify(toRaw(localItem.value)))
-  return computeAverageSurvivability(calculateStats(clone), previewSkills.value)
+  return computeAverageSurvivability(calculateStats(clone), previewSkills.value).ehp
 })
 
 function fmtNum(n: number): string {

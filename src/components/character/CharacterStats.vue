@@ -68,7 +68,7 @@ const dps = computed(() => {
 
 const survivability = computed(() => {
   const s = calculateStats(props.character)
-  return computeAverageSurvivability(s, equippedSkills.value)
+  return computeAverageSurvivability(s, equippedSkills.value).ehp
 })
 
 function fmtNum(n: number): string {
