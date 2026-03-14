@@ -10,10 +10,21 @@
     <template v-if="stats">
       <section class="stat-section">
         <h4>Offense</h4>
-        <StatRow label="Overall DPS"   :value="fmtNum(dps)"                               tip="Total damage per second from all equipped active skills. Factors in base damage, attribute scaling, spell/attack damage bonuses, and crit. Zero if no active skills are equipped." @tip="onTip" />
-        <StatRow label="Attack Damage" :value="String(stats.attackDamage)"               tip="Average physical damage per hit. Scaled by weapon base damage, Strength modifiers, and % increased modifiers." @tip="onTip" />
-        <StatRow label="Attack Speed"  :value="stats.attackSpeed.toFixed(2) + '/s'"      tip="Attacks per second. Base 1.0 + 0.002 per Dexterity, further scaled by % increased Attack Speed modifiers." @tip="onTip" />
-        <StatRow label="Move Speed"    :value="stats.movementSpeed + '%'"                 tip="Movement speed relative to base (100%). Each Dexterity point adds 0.2%. Increased by movement speed modifiers." @tip="onTip" />
+        <StatRow label="Overall DPS"      :value="fmtNum(dps)"                             tip="Total damage per second from all equipped active skills. Factors in base damage, attribute scaling, spell/attack damage bonuses, and crit. Zero if no active skills are equipped." @tip="onTip" />
+        <StatRow label="Attack Damage"       :value="String(stats.attackDamage)"               tip="Average physical damage per hit. Scaled by weapon base damage, Strength modifiers, and % increased modifiers." @tip="onTip" />
+        <StatRow label="Added Physical"      :value="'+' + stats.addedPhysicalDamage"          :tip="sourceTip('addedPhysicalDamage')"     @tip="onTip" />
+        <StatRow label="Increased Physical"  :value="'+' + stats.increasedPhysicalDamage + '%'" :tip="sourceTip('increasedPhysicalDamage')" @tip="onTip" />
+        <StatRow label="Attack Speed"        :value="stats.attackSpeed.toFixed(2) + '/s'"      tip="Attacks per second. Base 1.0 + 0.002 per Dexterity, further scaled by % increased Attack Speed modifiers." @tip="onTip" />
+        <StatRow label="Move Speed"          :value="stats.movementSpeed + '%'"                tip="Movement speed relative to base (100%). Each Dexterity point adds 0.2%. Increased by movement speed modifiers." @tip="onTip" />
+        <StatRow label="Spell Damage"        :value="'+' + stats.spellDamage + '%'"            :tip="sourceTip('spellDamage')"             @tip="onTip" />
+        <StatRow label="Added Fire"          :value="'+' + stats.addedFireDamage"      color="fire"      :tip="sourceTip('addedFireDamage')"      @tip="onTip" />
+        <StatRow label="Fire Damage"         :value="'+' + stats.fireDamage + '%'"     color="fire"      :tip="sourceTip('fireDamage')"           @tip="onTip" />
+        <StatRow label="Added Cold"          :value="'+' + stats.addedColdDamage"      color="ice"       :tip="sourceTip('addedColdDamage')"      @tip="onTip" />
+        <StatRow label="Cold Damage"         :value="'+' + stats.coldDamage + '%'"     color="ice"       :tip="sourceTip('coldDamage')"           @tip="onTip" />
+        <StatRow label="Added Lightning"     :value="'+' + stats.addedLightningDamage" color="lightning" :tip="sourceTip('addedLightningDamage')" @tip="onTip" />
+        <StatRow label="Lightning Damage"    :value="'+' + stats.lightningDamage + '%'" color="lightning" :tip="sourceTip('lightningDamage')"     @tip="onTip" />
+        <StatRow label="Added Chaos"         :value="'+' + stats.addedChaosDamage"     color="chaos"     :tip="sourceTip('addedChaosDamage')"     @tip="onTip" />
+        <StatRow label="Chaos Damage"        :value="'+' + stats.chaosDamage + '%'"    color="chaos"     :tip="sourceTip('chaosDamage')"          @tip="onTip" />
       </section>
 
       <section class="stat-section">
@@ -48,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Character } from '@/types'
+import type { Character, EquipmentSlot, ModifierTarget } from '@/types'
 import { useCharactersStore } from '@/stores'
 import { calculateStats } from '@/engine/statCalculator'
 import { computeTotalDPS } from '@/engine/offensiveCombat'
@@ -86,6 +97,38 @@ function onTip(tip: string | null, event: MouseEvent | null) {
     tipX.value = event.clientX + 14
     tipY.value = event.clientY + 14
   }
+}
+
+const SLOT_LABELS: Record<EquipmentSlot, string> = {
+  helmet: 'Helmet',
+  bodyArmor: 'Body Armour',
+  weapon: 'Weapon',
+  gloves: 'Gloves',
+  boots: 'Boots',
+  leftRing: 'Left Ring',
+  rightRing: 'Right Ring',
+}
+
+function sourceTip(target: ModifierTarget): string {
+  const lines: string[] = []
+
+  if (target === 'spellDamage') {
+    const int = props.character.baseStats.intelligence
+    lines.push(`Base: +${Math.floor(int / 2)}% (from ${int} Intelligence)`)
+  }
+
+  for (const [slot, item] of Object.entries(props.character.equipment) as [EquipmentSlot, typeof props.character.equipment[EquipmentSlot]][]) {
+    if (!item) continue
+    for (const mod of item.modifiers) {
+      const targets = [mod.target, ...(mod.extraTargets ?? [])]
+      if (targets.includes(target)) {
+        lines.push(`${SLOT_LABELS[slot]}: ${mod.label}`)
+      }
+    }
+  }
+
+  if (lines.length === 0) lines.push('No modifiers equipped')
+  return lines.join('\n')
 }
 
 function resClass(val: number): string {
@@ -131,5 +174,6 @@ function resClass(val: number): string {
   color: var(--color-text-secondary);
   max-width: 240px;
   line-height: 1.5;
+  white-space: pre-line;
 }
 </style>

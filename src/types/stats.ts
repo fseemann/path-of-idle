@@ -20,8 +20,23 @@ export interface ComputedStats {
   manaRegenFlat: number
   manaRegenPercent: number
 
-  // Offensive stats
+  // Offensive stats — % increased damage (applied multiplicatively to matching hit damage)
   spellDamage: number
+  fireDamage: number
+  coldDamage: number
+  lightningDamage: number
+  chaosDamage: number
+
+  // % increased damage per type
+  increasedPhysicalDamage: number
+
+  // Flat added damage to attacks (auto-attack and attack-tagged skills)
+  addedPhysicalDamage: number
+  addedFireDamage: number
+  addedColdDamage: number
+  addedLightningDamage: number
+  addedChaosDamage: number
+
   critChance: number
   critMultiplier: number
 

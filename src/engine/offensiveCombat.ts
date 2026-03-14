@@ -36,11 +36,16 @@ export function calculateSkillDamage(
   let increasedDamage = 0
   switch (damageEffect.damageType) {
     case 'fire':
+      increasedDamage += computedStats.spellDamage + computedStats.fireDamage
+      break
     case 'cold':
+      increasedDamage += computedStats.spellDamage + computedStats.coldDamage
+      break
     case 'lightning':
+      increasedDamage += computedStats.spellDamage + computedStats.lightningDamage
+      break
     case 'chaos':
-      // Spell damage applies to all elemental/chaos damage
-      increasedDamage += computedStats.spellDamage
+      increasedDamage += computedStats.spellDamage + computedStats.chaosDamage
       break
     case 'physical':
       // Physical damage uses attack damage stat
@@ -51,8 +56,16 @@ export function calculateSkillDamage(
   // Average crit multiplier: non-crits deal 1×, crits deal (critMultiplier/100)×
   const avgCritFactor = 1 + (computedStats.critChance / 100) * (computedStats.critMultiplier / 100 - 1)
 
-  // Calculate final damage
-  const scaledDamage = (baseDamage + attributeBonus) * (1 + increasedDamage / 100) * avgCritFactor
+  // Calculate final damage from the skill's own damage type
+  let scaledDamage = (baseDamage + attributeBonus) * (1 + increasedDamage / 100) * avgCritFactor
+
+  // Attack-tagged skills also benefit from flat added elemental damage on gear
+  if (skill.tags.includes('attack')) {
+    scaledDamage += computedStats.addedFireDamage * (1 + computedStats.fireDamage / 100) * avgCritFactor
+    scaledDamage += computedStats.addedColdDamage * (1 + computedStats.coldDamage / 100) * avgCritFactor
+    scaledDamage += computedStats.addedLightningDamage * (1 + computedStats.lightningDamage / 100) * avgCritFactor
+    scaledDamage += computedStats.addedChaosDamage * (1 + computedStats.chaosDamage / 100) * avgCritFactor
+  }
 
   return Math.round(scaledDamage)
 }
@@ -180,8 +193,13 @@ export function computeTotalDPS(
   const availableMana = calculateAvailableMana(boostedStats.maxMana, reservedMana)
   const manaRegenPerSecond = (boostedStats.maxMana * calculateManaRegenRate(boostedStats)) / 100
 
-  // Auto-attack (no mana cost)
-  let total = boostedStats.attackDamage * boostedStats.attackSpeed
+  // Auto-attack: physical base + added elemental (each scaled by its own % increased)
+  const addedElementalPerHit =
+    boostedStats.addedFireDamage * (1 + boostedStats.fireDamage / 100) +
+    boostedStats.addedColdDamage * (1 + boostedStats.coldDamage / 100) +
+    boostedStats.addedLightningDamage * (1 + boostedStats.lightningDamage / 100) +
+    boostedStats.addedChaosDamage * (1 + boostedStats.chaosDamage / 100)
+  let total = (boostedStats.attackDamage + addedElementalPerHit) * boostedStats.attackSpeed
 
   // Active skills
   const activeSkills = skills.filter((s) => s.type === 'active' && s.cooldown && s.cooldown > 0)

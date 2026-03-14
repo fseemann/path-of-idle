@@ -45,6 +45,16 @@ export function calculateStats(character: Character): ComputedStats {
 
   // Skill system modifiers
   let pctSpellDamage = 0
+  let pctFireDamage = 0
+  let pctColdDamage = 0
+  let pctLightningDamage = 0
+  let pctIncreasedPhysDamage = 0
+  let pctChaosDamage = 0
+  let flatAddedPhysDamage = 0
+  let flatAddedFireDamage = 0
+  let flatAddedColdDamage = 0
+  let flatAddedLightningDamage = 0
+  let flatAddedChaosDamage = 0
   let flatManaRegen = 0
   let pctManaRegen = 0
   let pctAuraEffect = 0
@@ -71,6 +81,14 @@ export function calculateStats(character: Character): ComputedStats {
             if (mod.kind === 'flat') flatAttackDamage += mod.value
             else pctAttackDamage += mod.value
             break
+          case 'addedPhysicalDamage':
+            flatAddedPhysDamage += mod.value
+            flatAttackDamage += mod.value // also rolls into the attackDamage total
+            break
+          case 'increasedPhysicalDamage':
+            pctIncreasedPhysDamage += mod.value
+            pctAttackDamage += mod.value // also rolls into the attackDamage total
+            break
           case 'attackSpeed':
             pctAttackSpeed += mod.value
             break
@@ -91,6 +109,30 @@ export function calculateStats(character: Character): ComputedStats {
             break
           case 'spellDamage':
             pctSpellDamage += mod.value
+            break
+          case 'fireDamage':
+            pctFireDamage += mod.value
+            break
+          case 'coldDamage':
+            pctColdDamage += mod.value
+            break
+          case 'lightningDamage':
+            pctLightningDamage += mod.value
+            break
+          case 'chaosDamage':
+            pctChaosDamage += mod.value
+            break
+          case 'addedFireDamage':
+            flatAddedFireDamage += mod.value
+            break
+          case 'addedColdDamage':
+            flatAddedColdDamage += mod.value
+            break
+          case 'addedLightningDamage':
+            flatAddedLightningDamage += mod.value
+            break
+          case 'addedChaosDamage':
+            flatAddedChaosDamage += mod.value
             break
           case 'manaRegenFlat':
             flatManaRegen += mod.value
@@ -134,6 +176,16 @@ export function calculateStats(character: Character): ComputedStats {
     manaRegenFlat: flatManaRegen,
     manaRegenPercent: manaRegenPercent + pctManaRegen,
     spellDamage: Math.round(spellDamage * (1 + pctSpellDamage / 100)),
+    increasedPhysicalDamage: pctIncreasedPhysDamage,
+    addedPhysicalDamage: flatAddedPhysDamage,
+    fireDamage: pctFireDamage,
+    coldDamage: pctColdDamage,
+    lightningDamage: pctLightningDamage,
+    chaosDamage: pctChaosDamage,
+    addedFireDamage: flatAddedFireDamage,
+    addedColdDamage: flatAddedColdDamage,
+    addedLightningDamage: flatAddedLightningDamage,
+    addedChaosDamage: flatAddedChaosDamage,
     critChance: parseFloat((critChance + flatCritChance).toFixed(2)),
     critMultiplier: Math.round(critMultiplier * (1 + pctCritMultiplier / 100)),
     auraEffect: pctAuraEffect,
