@@ -27,7 +27,7 @@ function weightedRandom<T extends { weight: number }>(pool: T[]): T | null {
   return pool[pool.length - 1] ?? null
 }
 
-function rollModifier(usedGroups: Set<ModifierGroup>, itemTier: number, slot: ItemSlot): RolledModifier | null {
+export function rollModifier(usedGroups: Set<ModifierGroup>, itemTier: number, slot: ItemSlot): RolledModifier | null {
   const eligible = MODIFIER_POOL.filter(
     (m) =>
       !usedGroups.has(m.group) &&
@@ -51,12 +51,29 @@ function rollModifier(usedGroups: Set<ModifierGroup>, itemTier: number, slot: It
 const ITEM_PREFIXES = ['Tempered', 'Gleaming', 'Vicious', 'Ancient', 'Runed']
 const ITEM_SUFFIXES = ['of the Bear', 'of the Fox', 'of Endurance', 'of the Magi', 'of the Stalwart']
 
-function generateItemName(baseName: string, rarity: ItemRarity): string {
+export function generateItemName(baseName: string, rarity: ItemRarity): string {
   if (rarity === 'normal') return baseName
   const suffix = ITEM_SUFFIXES[Math.floor(Math.random() * ITEM_SUFFIXES.length)]!
   if (rarity === 'magic') return `${baseName} ${suffix}`
   const prefix = ITEM_PREFIXES[Math.floor(Math.random() * ITEM_PREFIXES.length)]!
   return `${prefix} ${baseName} ${suffix}`
+}
+
+export interface CurrencyDropResult {
+  alchemyShards: number
+  chaosShards: number
+  divineShards: number
+}
+
+export function generateCurrencyDrops(map: GameMap, survivalRatio: number): CurrencyDropResult {
+  const alchemy = map.tier >= 2 ? Math.round(2 * map.lootMultiplier * survivalRatio * (0.5 + Math.random())) : 0
+  const chaos   = map.tier >= 3 ? Math.round(1 * map.lootMultiplier * survivalRatio * (0.5 + Math.random())) : 0
+  const divine  = map.tier >= 4 ? Math.round(0.5 * map.lootMultiplier * survivalRatio * (0.5 + Math.random())) : 0
+  return {
+    alchemyShards: Math.max(0, alchemy),
+    chaosShards: Math.max(0, chaos),
+    divineShards: Math.max(0, divine),
+  }
 }
 
 export function generateLoot(map: GameMap, character: Character, survivalRatio = 1): LootResult {

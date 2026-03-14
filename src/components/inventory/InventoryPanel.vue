@@ -32,6 +32,39 @@
           </div>
           <span class="shard-count">{{ currencyStore.exaltRemainder }}/{{ SHARDS_PER_CURRENCY }} shards</span>
         </div>
+        <div class="currency-row">
+          <span class="currency-label alchemy-color">Alchemy</span>
+          <span class="currency-orbs">{{ currencyStore.alchemys }} orb{{ currencyStore.alchemys !== 1 ? 's' : '' }}</span>
+          <div class="shard-bar">
+            <div
+              class="shard-fill alchemy-fill"
+              :style="{ width: `${(currencyStore.alchemyRemainder / SHARDS_PER_CURRENCY) * 100}%` }"
+            />
+          </div>
+          <span class="shard-count">{{ currencyStore.alchemyRemainder }}/{{ SHARDS_PER_CURRENCY }} shards</span>
+        </div>
+        <div class="currency-row">
+          <span class="currency-label chaos-color">Chaos</span>
+          <span class="currency-orbs">{{ currencyStore.chaos }} orb{{ currencyStore.chaos !== 1 ? 's' : '' }}</span>
+          <div class="shard-bar">
+            <div
+              class="shard-fill chaos-fill"
+              :style="{ width: `${(currencyStore.chaosRemainder / SHARDS_PER_CURRENCY) * 100}%` }"
+            />
+          </div>
+          <span class="shard-count">{{ currencyStore.chaosRemainder }}/{{ SHARDS_PER_CURRENCY }} shards</span>
+        </div>
+        <div class="currency-row">
+          <span class="currency-label divine-color">Divine</span>
+          <span class="currency-orbs">{{ currencyStore.divines }} orb{{ currencyStore.divines !== 1 ? 's' : '' }}</span>
+          <div class="shard-bar">
+            <div
+              class="shard-fill divine-fill"
+              :style="{ width: `${(currencyStore.divineRemainder / SHARDS_PER_CURRENCY) * 100}%` }"
+            />
+          </div>
+          <span class="shard-count">{{ currencyStore.divineRemainder }}/{{ SHARDS_PER_CURRENCY }} shards</span>
+        </div>
       </div>
     </div>
 
@@ -261,6 +294,9 @@ function disassembleAllRarity(rarity: ItemRarity) {
 
 .annulment-color { color: #9ab8d8; }
 .exalt-color     { color: #d4a855; }
+.alchemy-color   { color: #a8d8a8; }
+.chaos-color     { color: #d88a6a; }
+.divine-color    { color: #d4d855; }
 
 .currency-orbs {
   font-size: 13px;
@@ -285,6 +321,9 @@ function disassembleAllRarity(rarity: ItemRarity) {
 
 .annulment-fill { background: #9ab8d8; }
 .exalt-fill     { background: #d4a855; }
+.alchemy-fill   { background: #a8d8a8; }
+.chaos-fill     { background: #d88a6a; }
+.divine-fill    { background: #d4d855; }
 
 .shard-count {
   font-size: 11px;

@@ -104,6 +104,35 @@
             <span class="craft-hint">Add random modifier</span>
           </button>
         </div>
+        <div class="craft-row">
+          <button
+            class="craft-btn craft-btn--alchemy"
+            :disabled="!canAlchemy"
+            @click="onAlchemy"
+          >
+            Alchemy Orb
+            <span class="craft-count">({{ currencyStore.alchemys }})</span>
+            <span class="craft-hint">{{ alchemyHint }}</span>
+          </button>
+          <button
+            class="craft-btn craft-btn--chaos"
+            :disabled="!canChaos"
+            @click="onChaos"
+          >
+            Chaos Orb
+            <span class="craft-count">({{ currencyStore.chaos }})</span>
+            <span class="craft-hint">{{ chaosHint }}</span>
+          </button>
+          <button
+            class="craft-btn craft-btn--divine"
+            :disabled="!canDivine"
+            @click="onDivine"
+          >
+            Divine Orb
+            <span class="craft-count">({{ currencyStore.divines }})</span>
+            <span class="craft-hint">{{ divineHint }}</span>
+          </button>
+        </div>
       </div>
 
       <hr class="modal-divider" />
@@ -219,6 +248,41 @@ const canExalt = computed(() => {
   return localItem.value.modifiers.length < MAX_MODIFIERS_BY_SLOT[localItem.value.slot]
 })
 
+const maxMods = computed(() => MAX_MODIFIERS_BY_SLOT[localItem.value.slot])
+
+const canAlchemy = computed(() =>
+  currencyStore.alchemys >= 1 &&
+  localItem.value.rarity !== 'rare' &&
+  localItem.value.modifiers.length < maxMods.value
+)
+
+const canChaos = computed(() =>
+  currencyStore.chaos >= 1 && localItem.value.rarity === 'rare'
+)
+
+const canDivine = computed(() =>
+  currencyStore.divines >= 1 && localItem.value.modifiers.length > 0
+)
+
+const alchemyHint = computed(() => {
+  if (localItem.value.rarity === 'rare') return 'Item is already Rare'
+  if (localItem.value.modifiers.length >= maxMods.value) return 'Item is already full'
+  if (currencyStore.alchemys < 1) return 'Drops from Tier 2+ maps'
+  return 'Upgrade to Rare, fill modifiers'
+})
+
+const chaosHint = computed(() => {
+  if (localItem.value.rarity !== 'rare') return 'Requires a Rare item'
+  if (currencyStore.chaos < 1) return 'Drops from Tier 3+ maps'
+  return 'Reroll all modifiers'
+})
+
+const divineHint = computed(() => {
+  if (localItem.value.modifiers.length === 0) return 'Requires at least 1 modifier'
+  if (currencyStore.divines < 1) return 'Drops from Tier 4+ maps'
+  return 'Reroll modifier values'
+})
+
 // Stat preview: compute current and hypothetical stats for the selected character
 const previewSkills = computed(() =>
   selectedChar.value ? charactersStore.getEquippedSkills(selectedChar.value.id) : []
@@ -287,6 +351,21 @@ function onAnnulment() {
 
 function onExalt() {
   const result = currencyStore.useExalt(localItem.value)
+  if (result) syncItem(result)
+}
+
+function onAlchemy() {
+  const result = currencyStore.useAlchemy(localItem.value)
+  if (result) syncItem(result)
+}
+
+function onChaos() {
+  const result = currencyStore.useChaos(localItem.value)
+  if (result) syncItem(result)
+}
+
+function onDivine() {
+  const result = currencyStore.useDivine(localItem.value)
   if (result) syncItem(result)
 }
 
@@ -435,6 +514,11 @@ function onEquip() {
 .craft-row {
   display: flex;
   gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.craft-row:first-of-type {
+  margin-top: 0;
 }
 
 .craft-btn {
@@ -473,6 +557,21 @@ function onEquip() {
 .craft-hint {
   font-size: 10px;
   color: var(--color-text-dim);
+}
+
+.craft-btn--alchemy:not(:disabled) {
+  border-color: #a8d8a8;
+  color: #a8d8a8;
+}
+
+.craft-btn--chaos:not(:disabled) {
+  border-color: #d88a6a;
+  color: #d88a6a;
+}
+
+.craft-btn--divine:not(:disabled) {
+  border-color: #d4d855;
+  color: #d4d855;
 }
 
 .modal-divider {

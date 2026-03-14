@@ -2,12 +2,13 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import type { MapRun, RunProgress } from '@/types'
 import { GAME_MAPS } from '@/data/maps'
-import { generateLoot } from '@/engine/lootGenerator'
+import { generateLoot, generateCurrencyDrops } from '@/engine/lootGenerator'
 import { calculateStats } from '@/engine/statCalculator'
 import { simulateCombat } from '@/engine/combatSimulator'
 import { useCharactersStore } from './characters'
 import { useInventoryStore } from './inventory'
 import { useSkillsStore } from './skills'
+import { useCurrencyStore } from './currency'
 
 const STORAGE_KEY = 'poi-mapruns'
 
@@ -122,6 +123,9 @@ export const useMapRunsStore = defineStore('mapRuns', () => {
       const loot = generateLoot(map, character, survivalRatio)
       loot.runId = run.id
       inventoryStore.addItems(loot.items)
+
+      const currencyDrops = generateCurrencyDrops(map, survivalRatio)
+      useCurrencyStore().addCurrencyDrops(currencyDrops)
 
       // Add skill gems to skills store
       const skillsStore = useSkillsStore()
