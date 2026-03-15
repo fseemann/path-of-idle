@@ -2,19 +2,11 @@ import type { SkillDefinition, ComputedStats, BaseStats } from '@/types'
 import { initializeSkillState, applySkillBuffs } from './skillExecutor'
 import { calculateReservedMana, calculateAvailableMana, calculateManaRegenRate } from './manaCalculator'
 
-export interface SkillDamageResult {
-  skillId: string
-  baseDamage: number
-  scaledDamage: number
-  castsPerRun: number
-  totalDamage: number
-}
-
 /**
  * Calculate the damage dealt by a single cast of an active skill.
  * Formula: (baseDamage + attributeValue * scalingFactor) * (1 + increasedDamage / 100)
  */
-export function calculateSkillDamage(
+function calculateSkillDamage(
   skill: SkillDefinition,
   baseStats: BaseStats,
   computedStats: ComputedStats
@@ -74,7 +66,7 @@ export function calculateSkillDamage(
  * Calculate how many times a skill will be cast during a map run.
  * Casts are limited by both cooldown and available mana (pool + regen over the run).
  */
-export function calculateCastsPerRun(
+function calculateCastsPerRun(
   skill: SkillDefinition,
   runDurationSeconds: number,
   cooldownRecovery: number = 0,
@@ -100,47 +92,6 @@ export function calculateCastsPerRun(
 }
 
 /**
- * Calculate total damage output for all active skills during a map run.
- */
-export function calculateTotalSkillDamage(
-  skills: SkillDefinition[],
-  baseStats: BaseStats,
-  computedStats: ComputedStats,
-  runDurationSeconds: number
-): SkillDamageResult[] {
-  const results: SkillDamageResult[] = []
-
-  const passiveSkills = skills.filter((s) => s.type === 'passive')
-  const reservedMana = calculateReservedMana(computedStats.maxMana, passiveSkills)
-  const availableMana = calculateAvailableMana(computedStats.maxMana, reservedMana)
-  const manaRegenPerSecond = (computedStats.maxMana * calculateManaRegenRate(computedStats)) / 100
-
-  const activeSkills = skills.filter((s) => s.type === 'active')
-
-  for (const skill of activeSkills) {
-    const baseDamage = calculateSkillDamage(skill, baseStats, computedStats)
-    const castsPerRun = calculateCastsPerRun(
-      skill,
-      runDurationSeconds,
-      computedStats.cooldownRecovery,
-      availableMana,
-      manaRegenPerSecond
-    )
-    const totalDamage = baseDamage * castsPerRun
-
-    results.push({
-      skillId: skill.id,
-      baseDamage,
-      scaledDamage: baseDamage,
-      castsPerRun,
-      totalDamage,
-    })
-  }
-
-  return results
-}
-
-/**
  * Calculate the clear speed multiplier based on total damage output.
  * Higher damage = faster clear time = lower duration multiplier.
  * Formula: 1 - min(0.5, totalDamage / threshold)
@@ -155,16 +106,6 @@ export function calculateClearSpeedMultiplier(totalDamage: number): number {
 
   const reduction = Math.min(0.5, totalDamage / damageThreshold)
   return 1 - reduction
-}
-
-/**
- * Calculate the effective run duration after applying clear speed bonus.
- */
-export function calculateEffectiveDuration(
-  baseDuration: number,
-  clearSpeedMultiplier: number
-): number {
-  return baseDuration * clearSpeedMultiplier
 }
 
 /**
