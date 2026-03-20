@@ -14,7 +14,7 @@ src/engine/   — pure TS, no Vue imports (stat calculation, combat, loot, XP)
 src/stores/   — Pinia bridge between engine and UI (characters, inventory, mapRuns)
 src/components/ — Vue UI only, reads from stores and engine
 src/types/    — all shared interfaces, re-exported from index.ts
-src/data/     — static game data (maps, items, skill definitions)
+src/data/     — static game data (maps, items, skill definitions, modifiers)
 ```
 
 ## Central game mechanics — single source of truth
@@ -26,6 +26,11 @@ Three functions implement the core game mechanics. **Never reimplement or duplic
   - **`simulateCombat`** also calls **`computeRunDurationMs`** internally and includes `speedFactor` and `durationMs` in its return value. Callers never need to call `computeRunDurationMs` directly — a single `simulateCombat` call provides all data needed for both running a map and displaying a preview to the player.
 
 When displaying any stat that feeds into these calculations, retrieve the value from their return types — do not recompute it with inline formulas.
+
+## UI
+
+- `src/components/character/CharacterStats.vue` displays in detail all stats and modifiers for a character
+  - everything that is calculated will be displayed in the UI, the player will be provided with all the data required to optimize his character
 
 ## Code Intelligence
 
