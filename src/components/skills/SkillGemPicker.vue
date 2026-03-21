@@ -29,7 +29,7 @@
                 {{ getSkillDef(gem.skillId)?.manaCost }} mana
               </span>
               <span v-if="isActive(gem.skillId)" class="stat cd">
-                {{ getSkillDef(gem.skillId)?.cooldown }}s CD
+                {{ effectiveCooldown(getSkillDef(gem.skillId)?.cooldown ?? 0) }}s CD
               </span>
               <span v-if="isPassive(gem.skillId)" class="stat reserve">
                 {{ getSkillDef(gem.skillId)?.manaReservation }}% reserved
@@ -105,6 +105,16 @@ const availableGems = computed(() => {
 })
 
 const character = computed(() => props.characterId ? charactersStore.getCharacter(props.characterId) : null)
+
+const cooldownRecovery = computed(() => {
+  if (!character.value) return 0
+  return calculateStats(character.value).cooldownRecovery
+})
+
+function effectiveCooldown(baseCooldown: number): number {
+  const ec = baseCooldown / (1 + cooldownRecovery.value / 100)
+  return Math.round(ec * 100) / 100
+}
 
 // Baseline DPS and EHP with current loadout
 const baseline = computed(() => {

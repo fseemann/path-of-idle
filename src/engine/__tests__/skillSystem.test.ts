@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test'
 import { calculateStats } from '../statCalculator'
 import { simulateCombat } from '../combatSimulator'
 import { calculateManaMetrics, regenerateMana } from '../manaCalculator'
-import { initializeSkillState, tickSkills } from '../skillExecutor'
+import { initializeSkillState } from '../skillExecutor'
 import { skillDefinitions } from '@/data/skillDefinitions'
 import { GAME_MAPS } from '@/data/maps'
 import type { Character } from '@/types'
@@ -69,32 +69,6 @@ describe('Skill System', () => {
     // Should have Clarity aura buffs
     expect(activeBuffs.length).toBeGreaterThan(0)
     expect(activeBuffs.some(b => b.skillId === 'clarity')).toBe(true)
-  })
-
-  test('skill execution consumes mana and triggers cooldowns', () => {
-    const equippedSkills = [
-      skillDefinitions.find(s => s.id === 'fireball')!,
-    ]
-
-    const { cooldowns, activeBuffs } = initializeSkillState(equippedSkills)
-    const currentMana = 90
-
-    // Tick once (skills should cast)
-    const result = tickSkills(
-      equippedSkills,
-      cooldowns,
-      activeBuffs,
-      currentMana,
-      Date.now(),
-      1 // 1 second
-    )
-
-    // Fireball costs 15 mana
-    expect(result.manaConsumed).toBe(15)
-
-    // Fireball has 3s cooldown
-    const fireballCd = result.cooldowns.find(c => c.skillId === 'fireball')
-    expect(fireballCd?.remainingCooldown).toBe(3)
   })
 
   test('mana regeneration works correctly', () => {

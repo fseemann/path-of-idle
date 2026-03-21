@@ -16,6 +16,10 @@
         <StatRow label="Increased Physical"  :value="'+' + stats.increasedPhysicalDamage + '%'" :tip="sourceTip('increasedPhysicalDamage')" @tip="onTip" />
         <StatRow label="Attack Speed"        :value="stats.attackSpeed.toFixed(2) + '/s'"      tip="Attacks per second. Base 1.0 + 0.002 per Dexterity, further scaled by % increased Attack Speed modifiers." @tip="onTip" />
         <StatRow label="Move Speed"          :value="stats.movementSpeed + '%'"                tip="Movement speed relative to base (100%). Each Dexterity point adds 0.2%. Increased by movement speed modifiers." @tip="onTip" />
+        <StatRow label="Cooldown Recovery" :value="'+' + stats.cooldownRecovery + '%'" :tip="sourceTip('cooldownRecovery')" @tip="onTip" />
+        <StatRow label="Crit Chance"       :value="stats.critChance.toFixed(2) + '%'"   :tip="sourceTip('critChance')"        @tip="onTip" />
+        <StatRow label="Crit Multiplier"   :value="stats.critMultiplier + '%'"           :tip="sourceTip('critMultiplier')"    @tip="onTip" />
+        <StatRow label="Aura Effect"       :value="'+' + stats.auraEffect + '%'"         :tip="sourceTip('auraEffect')"        @tip="onTip" />
         <StatRow label="Spell Damage"        :value="'+' + stats.spellDamage + '%'"            :tip="sourceTip('spellDamage')"             @tip="onTip" />
         <StatRow label="Added Fire"          :value="'+' + stats.addedFireDamage"      color="fire"      :tip="sourceTip('addedFireDamage')"      @tip="onTip" />
         <StatRow label="Fire Damage"         :value="'+' + stats.fireDamage + '%'"     color="fire"      :tip="sourceTip('fireDamage')"           @tip="onTip" />
@@ -32,7 +36,9 @@
         <StatRow label="Survivability" :value="fmtNum(survivability)"                    tip="Average Effective HP across all damage types (physical, fire, cold, lightning, chaos) weighted equally. Higher is harder to kill." @tip="onTip" />
         <StatRow label="Armour"  :value="String(stats.defense)"  tip="Reduces incoming physical damage. Sum of equipment base defense plus 1 per 5 Strength, then scaled by % increased Armour modifiers." @tip="onTip" />
         <StatRow label="Life"    :value="String(stats.health)"   tip="Maximum life. Base 50 + 5 per Strength point. Increased by flat Maximum Life modifiers." @tip="onTip" />
-        <StatRow label="Mana"    :value="String(stats.maxMana)"     tip="Maximum mana. Base 30 + 3 per Intelligence point. Increased by flat Maximum Mana modifiers." @tip="onTip" />
+        <StatRow label="Mana"         :value="String(stats.maxMana)"                   tip="Maximum mana. Base 30 + 3 per Intelligence point. Increased by flat Maximum Mana modifiers." @tip="onTip" />
+        <StatRow label="Mana Regen"   :value="stats.manaRegenPercent.toFixed(2) + '%'" tip="Mana regenerated per second as a percentage of maximum mana. Base 1.75%. Increased by mana regeneration modifiers." @tip="onTip" />
+        <StatRow label="Mana Regen +" :value="'+' + stats.manaRegenFlat"               :tip="sourceTip('manaRegenFlat')"    @tip="onTip" />
       </section>
 
       <section class="stat-section">
