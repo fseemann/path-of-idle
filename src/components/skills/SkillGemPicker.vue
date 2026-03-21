@@ -43,6 +43,19 @@
             <div class="gem-scaling">
               Scales with {{ getScalingLabel(gem.skillId) }}
             </div>
+
+            <div v-if="character" class="gem-deltas">
+              <span
+                v-if="getDelta(gem.id, 'dps') !== 0"
+                class="delta"
+                :class="getDelta(gem.id, 'dps') > 0 ? 'positive' : 'negative'"
+              >{{ formatDelta(getDelta(gem.id, 'dps')) }} DPS</span>
+              <span
+                v-if="getDelta(gem.id, 'ehp') !== 0"
+                class="delta"
+                :class="getDelta(gem.id, 'ehp') > 0 ? 'positive' : 'negative'"
+              >{{ formatDelta(getDelta(gem.id, 'ehp')) }} EHP</span>
+            </div>
           </div>
         </div>
       </div>
@@ -54,11 +67,16 @@
 import { computed } from 'vue'
 import type { SkillSlot as SkillSlotType, SkillGem } from '@/types'
 import { useSkillsStore } from '@/stores/skills'
+import { useCharactersStore } from '@/stores/characters'
 import { getSkillDefinition } from '@/data/skillDefinitions'
+import { calculateStats } from '@/engine/statCalculator'
+import { computeTotalDPS } from '@/engine/offensiveCombat'
+import { computeAverageSurvivability } from '@/engine/combatSimulator'
 
 const props = defineProps<{
   slot: SkillSlotType
   currentGemId?: string
+  characterId?: string
 }>()
 
 const emit = defineEmits<{
@@ -67,6 +85,7 @@ const emit = defineEmits<{
 }>()
 
 const skillsStore = useSkillsStore()
+const charactersStore = useCharactersStore()
 
 const slotType = computed(() => {
   return props.slot.startsWith('active') ? 'active' : 'passive'
@@ -84,6 +103,49 @@ const availableGems = computed(() => {
     return skillDef.type === slotType.value
   })
 })
+
+const character = computed(() => props.characterId ? charactersStore.getCharacter(props.characterId) : null)
+
+// Baseline DPS and EHP with current loadout
+const baseline = computed(() => {
+  if (!character.value) return null
+  const stats = calculateStats(character.value)
+  const skills = charactersStore.getEquippedSkills(character.value.id)
+  const dps = computeTotalDPS(skills, character.value.baseStats, stats)
+  const ehp = computeAverageSurvivability(stats, skills).ehp
+  return { dps, ehp }
+})
+
+// Hypothetical DPS and EHP with a given gem in this slot
+function simulateWithGem(gemId: string): { dps: number; ehp: number } | null {
+  if (!character.value) return null
+  const stats = calculateStats(character.value)
+
+  // Build hypothetical skills: replace this slot with the candidate gem
+  const hypotheticalSkillIds: Record<string, string> = { ...character.value.skills, [props.slot]: gemId }
+  const skills = Object.values(hypotheticalSkillIds)
+    .map(id => getSkillDefinition(
+      skillsStore.getSkillGem(id)?.skillId ?? ''
+    ))
+    .filter((s): s is NonNullable<typeof s> => s !== null && s !== undefined)
+
+  const dps = computeTotalDPS(skills, character.value.baseStats, stats)
+  const ehp = computeAverageSurvivability(stats, skills).ehp
+  return { dps, ehp }
+}
+
+function getDelta(gemId: string, stat: 'dps' | 'ehp'): number {
+  if (!baseline.value) return 0
+  const hypo = simulateWithGem(gemId)
+  if (!hypo) return 0
+  return Math.round(hypo[stat] - baseline.value[stat])
+}
+
+function formatDelta(delta: number): string {
+  const sign = delta >= 0 ? '+' : ''
+  if (Math.abs(delta) >= 1000) return `${sign}${(delta / 1000).toFixed(1)}k`
+  return `${sign}${delta}`
+}
 
 function getSkillDef(skillId: string) {
   return getSkillDefinition(skillId)
@@ -262,5 +324,26 @@ function selectGem(gemId: string) {
   font-size: 11px;
   color: #666;
   font-style: italic;
+}
+
+.gem-deltas {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #333;
+}
+
+.delta {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.delta.positive {
+  color: #2ecc71;
+}
+
+.delta.negative {
+  color: #e74c3c;
 }
 </style>

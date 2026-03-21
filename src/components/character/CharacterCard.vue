@@ -25,6 +25,7 @@
       <hr class="divider" />
       <SkillPanel
         :equippedSkills="character.skills"
+        :characterId="character.id"
         @equipSkill="onEquipSkill"
         @unequipSkill="onUnequipSkill"
       />

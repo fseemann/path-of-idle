@@ -10,6 +10,7 @@
           :key="slot"
           :slot="slot"
           :gemId="equippedSkills[slot]"
+          :characterId="characterId"
           @equip="openPicker(slot)"
           @unequip="onUnequip(slot)"
         />
@@ -24,6 +25,7 @@
           :key="slot"
           :slot="slot"
           :gemId="equippedSkills[slot]"
+          :characterId="characterId"
           @equip="openPicker(slot)"
           @unequip="onUnequip(slot)"
         />
@@ -34,6 +36,7 @@
       v-if="pickerSlot"
       :slot="pickerSlot"
       :currentGemId="equippedSkills[pickerSlot]"
+      :characterId="characterId"
       @select="(gemId) => onEquip(pickerSlot!, gemId)"
       @close="pickerSlot = null"
     />
@@ -48,6 +51,7 @@ import SkillGemPicker from './SkillGemPicker.vue'
 
 const props = defineProps<{
   equippedSkills: Partial<Record<SkillSlotType, string>>
+  characterId?: string
 }>()
 
 const emit = defineEmits<{

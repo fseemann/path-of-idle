@@ -6,7 +6,7 @@ import { calculateReservedMana, calculateAvailableMana, calculateManaRegenRate }
  * Calculate the damage dealt by a single cast of an active skill.
  * Formula: (baseDamage + attributeValue * scalingFactor) * (1 + increasedDamage / 100)
  */
-function calculateSkillDamage(
+export function calculateSkillDamage(
   skill: SkillDefinition,
   baseStats: BaseStats,
   computedStats: ComputedStats
