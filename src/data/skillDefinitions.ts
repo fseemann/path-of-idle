@@ -11,7 +11,7 @@ export const skillDefinitions: SkillDefinition[] = [
     scaling: { attribute: 'intelligence', factor: 0.6 },
     manaCost: 15,
     cooldown: 3,
-    effects: [{ type: 'damage', damageType: 'fire', baseDamage: [18, 27] }],
+    effects: [{ type: 'damage', damageType: 'fire', baseDamage: [31, 42] }],
     levelRequirement: 1,
     tier: 1,
   },
